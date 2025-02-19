@@ -1,0 +1,32 @@
+UINL Component Classes (i.e., GUI widget types)			
+Component Class	Component Type	Child Component Class	Short Description
+root	container (list)	any, except "grg", "gr", and "dp"	root container refers to the entire UI display; it is a special "bin" that has no id and cannot be deleted
+"bin"	container (list)	any, except "grg", "gr", and "dp"	generic container (functionally equivalent to HTML div)
+"txt"	text (str)		generic UTF8 text or text input
+"num"	number (float)		numeric item or numeric input; may have options for range, step-size, and unit type
+"btn"	toggle (bool)		clickable button
+"hold"	toggle (bool)		hold-down button (different from "btn" in that it sends events both when it is down and when it is released)
+"opt"	toggle (bool)		option; this is a selectable and deselectable item (e.g., checkbox, radio button, selection)
+"time"	number (float)		amount of time (in seconds)
+"dt"	number (float)		date-time field; specifies date and/or time of day; this item's value represents number of seconds since epoch
+"math"	text (str)		mathematical value or formula; a special text item that follows AsciiMath syntax; Note: use "i" (character i in double-quotes) or UTF character ⅈ to denote imaginary number (i.e., square root of -1)
+"doc"	text (str)		embedded document -- text with markup syntax; default markup language is HTML (use "fmt" property to change markup language; e.g., use "fmt":"md" for markdown syntax)
+"file"	text (str)		file chooser
+"rgb"	text (str)		color; a special text item whose value is a 6-character hexadecimal value, representing RGB color
+"drop"	container (list)	any, except "grg", "gr", and "dp"	dropdown container (usually dropdown menu)
+"ctx"	container (list)	any, except "grg", "gr", and "dp"	context container (usually context menu)
+"win"	container (list)	any, except "grg", "gr", and "dp"	floating window or modal popup or toast
+"one"	container (list)	"bin"	a container with one child whose content is visible and other children whose content is hidden (usually represented to humans as tabs, accordion, or a carousel)
+"grid"	container (list)	"bin"	grid (i.e., table); each child of this container is a "bin" which represents a table row, and each of its children are row cells
+"<span"	none		grid cell merged with a cell to its left -- a special blank item inside a table row, indicating that an item directly to its left spans rightward into this cell's space
+"^span"	none		grid cell merged with a cell above it -- a special blank item inside a table row, indicating that an item directly above it spans downward into this cell's space
+"url"	url (special str)		inline frame displaying external resources
+"media"	url (special str)		embedded playable media (e.g., audio, video, slideshow)
+"plot"	container (list)	"data"	2d plot chart
+"data"	container (list)	"dp"	data series (displayed as a standalone 2d plot, or overlapping with other data series inside a "plot" item)
+"dp"	number (float)		data point inside a "data" item
+"2d"	container (list)	"gr" or "grg"	2d graphical viewport
+"3d"	container (list)	"gr" or "grg"	3d graphical viewport
+"grg"	container (list)	"gr" or "grg"	a group of "gr" items
+"gr"	container (list)	"l"	graphical node or shape, potentially with lines/arrows connecting to other graphical nodes
+"l"	uid (str, int, list)		line/link connecting its parent "gr" item to another item in current viewport
