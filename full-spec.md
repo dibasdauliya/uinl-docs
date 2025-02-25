@@ -1,5 +1,3 @@
-# UINL Protocol Documentation
-
 ## Sample Interaction
 
 ### UI->APP: Initial Handshake
