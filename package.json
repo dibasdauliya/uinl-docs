@@ -1,0 +1,32 @@
+{
+  "name": "uinl-docs",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+http://github.com/dibasdauliya/uinl-docs"
+  },
+  "bugs": {
+    "url": "http://github.com/dibasdauliya/uinl-docs/issues"
+  },
+  "homepage": "http://github.com/dibasdauliya/uinl-docs#readme",
+  "dependencies": {
+    "flowbite-react": "^0.9.0",
+    "next": "^14.2.12",
+    "nextra": "^2.13.4",
+    "nextra-theme-docs": "^2.13.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "18.11.10",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^4.9.3"
+  }
+}
