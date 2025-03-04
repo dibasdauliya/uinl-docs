@@ -1,0 +1,2494 @@
+# UINL v1.2 Full Specification
+
+## Table of Contents
+
+- [user-side event](#user-side-event)
+- [app-originated UI update](#app-originated-ui-update)
+- [user-side event property](#user-side-event-property)
+- [app-originated command](#app-originated-command)
+- [widget property](#widget-property)
+- [widget type](#widget-type)
+- [details](#details)
+- [task instructions grammar](#task-instructions-grammar)
+
+## user-side event
+
+### `<<UI&rarr;APP>>`
+
+- **Grammar:** `{(<<uiInfo>>,)*"t":0(,<<uiInfo>>)*}`
+- **Required:** Always
+- **Description:** handshake; this is the first message sent from user-agent to app software once user-agent software is loaded and ready; no other UI->APP or APP->UI messages should precede this message; detailed `<<uiInfo>>` is strictly voluntary, though highly encouraged (especially "userAgent" and "time" `<<uiInfo>>`)
+
+### `<<UI&rarr;APP>>`
+
+- **Grammar:** `{<<userProp>>(,<<userProp>>)*}`
+- **Required:** Always
+- **Description:** user-side action/event (e.g. button-click, textbox edit)
+
+## app-originated UI update
+
+### `<<APP&rarr;UI>>`
+
+- **Grammar:** `{(<<uiDirective>>(,<<uiDirective>>)*)?}`
+- **Required:** Always
+- **Description:** app-driven updates to user display; by default UINL protocol is synchronous, requiring an APP->UI message in response to every UI->APP message; when there are no `<<uiDirective>>`'s (i.e., APP->UI message is {}) that signifies there are no display updates; see `<<uiDirective>>` "!async" for description of asynchronous mode and how it's enabled
+
+## user-side event property
+
+### `<<uiInfo>>`
+
+- **Grammar:** `"userAgent":<<text>>`
+- **Required:** Always
+- **Description:** information about UI software (i.e., user-agent name, version)
+
+### `<<uiInfo>>`
+
+- **Grammar:** `"wh":[<<number>>,<<number>>]`
+- **Required:** Always
+- **Description:** available width/height of application window (in pixels)
+
+### `<<uiInfo>>`
+
+- **Grammar:** `"ip":<<text>>`
+- **Required:** Always
+- **Description:** user-agent ip address
+
+### `<<uiInfo>>`
+
+- **Grammar:** `"url":<<text>>`
+- **Required:** Always
+- **Description:** url (if any) employed by UI to connect to the app
+
+### `<<uiInfo>>`
+
+- **Grammar:** `"time":<<text>>`
+- **Required:** Always
+- **Description:** full user local time, including milliseconds and timezone offset, in ISO8601 format (e.g. "2020-04-27T11:26:43.967-04:00")
+
+### `<<uiInfo>>`
+
+- **Grammar:** `"platform":<<text>>`
+- **Required:** Always
+- **Description:** information about where UI software is running (i.e., OS, framework)
+
+### `<<uiInfo>>`
+
+- **Grammar:** `"system":<<settings>>`
+- **Required:** Always
+- **Description:** any user-system information available (e.g., memory available, type of GPU, type of CPU)
+
+### `<<uiInfo>>`
+
+- **Grammar:** `"screen":<<settings>>`
+- **Required:** Always
+- **Description:** user screen information (e.g. {"availWidth":1168,"availHeight":692,"width":1229,"height":692,"colorDepth":24,"pixelDepth":24,"availLeft":0,"availTop":0,"orientation":{"angle":0,"type":"landscape-primary"}}); at a minimum, if this information is available, returned `<<settings>>` should include "width":`<<number>>` and "height":`<<number>>`
+
+### `<<userProp>>`
+
+- **Grammar:** `"error":<<text>>`
+- **Required:** Always
+- **Description:** error message to be dumped into app-side error stream
+
+### `<<userProp>>`
+
+- **Grammar:** `"s":<<text>>`
+- **Required:** Always
+- **Description:** session state identifier string; if session state identification is requested by the application via the "S" `<<Command>>`, this `<<userProp>>` must be present in all UI->APP messages
+
+### `<<userProp>>`
+
+- **Grammar:** `"t":<<ums>>`
+- **Required:** Always
+- **Description:** timestamp indicating when user input occurred; this `<<userProp>>` is present in every UI->APP message; `<<uint>>` must be 0 for handshake and greater than 0 for all other messages
+
+### `<<userProp>>`
+
+- **Grammar:** `"u":<<id>>|<<idPath>>`
+- **Required:** Always
+- **Description:** unique id or path for item being toggled/changed by user; this `<<userProp>>` is present in every UI->APP message, except when when message does not apply to any specific item, but rather to the display as a whole (e.g. {"error":"some error","t":`<<ums>>`}); `<<id>>` must be send instead of `<<idPath>>` whenever `<<id>>` is unique within display; `<<idPath>>` must be sent instead of `<<id>>` whenever `<<id>>` does not uniquely identify the item within the display
+
+### `<<userProp>>`
+
+- **Grammar:** `"v":<<value>>`
+- **Required:** Always
+- **Description:** value indicating user-input
+
+### `<<userProp>>`
+
+- **Grammar:** `"requirable":{(<<required>>(,<<required>>)*)?}`
+- **Required:** Always
+- **Description:** inform app software which options and option-values are available (i.e., can be required) in user-agent software; this is sent as a response to `<<uiDirective>>` "!!require":{}
+
+### `<<userProp>>`
+
+- **Grammar:** `"r":{<<reqInfo>>(,<<reqInfo>>)*}`
+- **Required:** Requireable
+- **Description:** information returned to application software, as requested via the "R" command or the "r" `<<aniOpt>>` or the "r" `<<ovrOpt>>`
+
+### `<<userProp>>`
+
+- **Grammar:** `<<eventInfo>>`
+- **Required:** Requireable
+- **Description:** events triggered by user input, user action, user software changes, media playback, or animation
+
+### `<<userProp>>`
+
+- **Grammar:** `"ul":<<uid>>`
+- **Required:** Requireable
+- **Description:** leaf id for current event; this is the id of the item where current event occurred -- a descendant of a container listening for this event; see `<<interactProp>>` "eventLeaf" for more details
+
+### `<<userProp>>`
+
+- **Grammar:** `"m":<<uid>>`
+- **Required:** Requireable
+- **Description:** indicate that user has moved current item to container specified by `<<uid>>`
+
+### `<<userProp>>`
+
+- **Grammar:** `"i":<<uint>>`
+- **Required:** Requireable
+- **Description:** indicate new index for item that was moved
+
+### `<<userProp>>`
+
+- **Grammar:** `"o":<<uid>>`
+- **Required:** Requireable
+- **Description:** overlap-start event has occurred with item specified via `<<uid>>`
+
+### `<<userProp>>`
+
+- **Grammar:** `"e":<<uid>>`
+- **Required:** Requireable
+- **Description:** overlap-end event has occurred with item specified via `<<uid>>`
+
+### `<<userProp>>`
+
+- **Grammar:** `"b":<<uid>>`
+- **Required:** Requireable
+- **Description:** bounce (i.e., collision) event has occurred with item specified via `<<uid>>`
+
+### `<<userProp>>`
+
+- **Grammar:** `"r2":{<<reqInfo>>(,<<reqInfo>>)*}`
+- **Required:** Requireable
+- **Description:** information returned to application software along with overlap-start, overlap-end, or bounce event, as requested via the "r2" or "r2+" `<<ovrOpt>>`
+
+### `<<userProp>>`
+
+- **Grammar:** `"+<<propName>>":"<<number>>"`
+- **Required:** Requireable
+- **Description:** animation is stopped for property `<<propName>>` due to reaching the "min" or "max" `<<aniOpt>>` value; `<<number>>` indicates terminating velocity
+
+### `<<eventInfo>>`
+
+- **Grammar:** `<<calcProp>>`
+- **Required:** Requireable
+- **Description:** location and size -change events
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"v":<<value>>`
+- **Required:** Requireable
+- **Description:** on-value-change event listener; useful for dynamic input fields (e.g., dynamic search-boxes)
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"fold":1|2`
+- **Required:** Requireable
+- **Description:** minimize/restore event listener; user folded/minimized or unfolded/restored item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"fcs":0|1`
+- **Required:** Requireable
+- **Description:** on-focus/on-blur event listener; user clicked or tabbed over onto current item or one of its descendants
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"sx":<<number>>`
+- **Required:** Requireable
+- **Description:** horizontal scrolling event listener; user changed horizontal scrolling position
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"sy":<<number>>`
+- **Required:** Requireable
+- **Description:** vertical scrolling event listener; user changed vertical scrolling position
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"mark":[<<uint>>,<<uint>>]`
+- **Required:** Requireable
+- **Description:** text-selection event listener; user selected text in current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"copy":<<text>>`
+- **Required:** Requireable
+- **Description:** text copied (in addition to standard clipboard copy, this should also capture when text is copied by dragging-dropping)
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"cut":<<text>>`
+- **Required:** Requireable
+- **Description:** text cut
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"paste":<<text>>`
+- **Required:** Requireable
+- **Description:** text pasted (in addition to standard clipboard paste, this should also capture when text is pasted by dragging-dropping)
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"k":<<key>>`
+- **Required:** Requireable
+- **Description:** keyboard key-down event
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"ku":<<key>>`
+- **Required:** Requireable
+- **Description:** keyboard key-up event
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"kc":<<keyCode>>`
+- **Required:** Requireable
+- **Description:** keyboard key-down event with key-code
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"kcu":<<keyCode>>`
+- **Required:** Requireable
+- **Description:** keyboard key-up event with key-code
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"sw":<<number>>`
+- **Required:** Requireable
+- **Description:** scroll wheel (or equivalent device) scroll up/down event; `<<number>>` represents the vertical scroll amount (up is negative, down is positive)
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"swh":<<number>>`
+- **Required:** Requireable
+- **Description:** horizontal scroll wheel (or equivalent device) scroll left/right event; `<<number>>` represents the horizontal scroll amount (left is negative, right is positive)
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"ctx":[<<xy>>?]`
+- **Required:** Requireable
+- **Description:** context menu event (right-click or long-tap or some other method provided by current system to bring up context menu); `<<xy>>` indicates the mouse/pointer location within current item, if available
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"md":[<<uint>>(,<<xy>>)?]`
+- **Required:** Requireable
+- **Description:** mouse/pointer button-down event for non-primary buttons; `<<uint>>` is the button number, and it is zero-indexed, such that "md":[1] signifies secondary mouse button, "md":[2] signifies third (auxiliary, usually scroll-wheel) button, "md":[3] signifies fourth button, "md":[4] signifies fifth mouse button, and "md":[0] is not a valid event (use "pd" event for primary mouse button capture); if mouse/pointer location is known, `<<xy>>` (location within current item) is sent; this event does not repeat while button is held down
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"mu":[<<uint>>(,<<xy>>)?]`
+- **Required:** Requireable
+- **Description:** mouse/pointer button-up event for non-primary buttons; `<<uint>>` is the button number, and it is zero-indexed, such that "mu":[1] signifies secondary mouse button, "mu":[2] signifies third (auxiliary, usually scroll-wheel) button, "mu":[3] signifies fourth button, "mu":[4] signifies fifth mouse button, and "mu":[0] is not a valid event (use "pu" event for primary mouse button capture); if mouse/pointer location is known, `<<xy>>` (location within current item) is sent
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"pd":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** pointer down (mouse primary button-down or tap-start event); `<<xy>>` is the mouse/pointer location within current item; this event does not repeat while button is held down
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"pu":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** pointer up (mouse primary button-up or tap-end even)t; `<<xy>>` is the mouse/pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"pc":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** pointer click (mouse primary click or tap event); `<<xy>>` is the mouse/pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"pcc":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** pointer (or mouse primary button) double-click or double-tap event; `<<xy>>` is the mouse/pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** pointer/mouse location-change event; `<<xy>>` is the mouse/pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"pe":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** pointer/mouse movement-end event; sent only when mouse/pointer stops moving for longer than 100ms (default) or whatever number of milliseconds is set via the "throt" `<<interactProp>>` for the "pe" event
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"po":[1|0(,<<xy>>)?]`
+- **Required:** Requireable
+- **Description:** pointer/mouse over and out events; pointer/mouse moved over ("po":[1,`<<xy>>`]) or out of ("po":[0,`<<xy>>`]) current item; location where pointer/mouse left item is only sent if available
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"pp":<<number>>`
+- **Required:** Requireable
+- **Description:** pointer pressure and hover distance; some pointer devices have pressure and/or hover sensitivity -- use the "pp" event to capture when pointer pressure or hover state changes; when pointer device is hovering -1 <= `<<number>>` < 0, where -1 is max hover detection range; when pointer device is touching 0 < `<<number>>` <= 1, where 1 is highest detectable pressure; "pp":0 is sent when pointer is no longer hovering or touching
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p2d":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 2nd pointer down (tap-start) event; `<<xy>>` is the pointer location within current item; this event does repeat while pointer is held down
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p2u":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 2nd pointer up (tap-end) event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p2c":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 2nd pointer click (tap) event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p2cc":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 2nd pointer double-click (double-tap) event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p2":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 2nd pointer location-change event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p2e":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 2nd pointer movement-end event; sent only when pointer stops moving for longer than 100ms (default) or whatever number of milliseconds is set via the "throt" `<<interactProp>>` for the "p2e" event
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p2o":[1|0(,<<xy>>)?]`
+- **Required:** Requireable
+- **Description:** 2nd pointer moved over ("p2o":[1,`<<xy>>`]) or out of ("p2o":[0,`<<xy>>`]) current item; location where pointer left item is only sent if available
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p2p":<<number>>`
+- **Required:** Requireable
+- **Description:** 2nd pointer pressure and hover distance; some pointer devices have pressure and/or hover sensitivity -- use the "pp" event to capture when pointer pressure or hover state changes; when pointer device is hovering -1 <= `<<number>>` < 0, where -1 is max hover detection range; when pointer device is touching 0 < `<<number>>` <= 1, where 1 is highest detectable pressure; "p2p":0 is sent when 2nd pointer is no longer hovering or touching
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p3d":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 3rd pointer down (tap-start) event; `<<xy>>` is the pointer location within current item; this event does repeat while pointer is held down
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p3u":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 3rd pointer up (tap-end) event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p3c":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 3rd pointer click (tap) event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p3cc":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 3rd pointer double-click (double-tap) event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p3":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 3rd pointer location-change event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p3e":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 3rd pointer movement-end event; sent only when pointer stops moving for longer than 100ms (default) or whatever number of milliseconds is set via the "throt" `<<interactProp>>` for the "p3e" event
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p3o":[1|0(,<<xy>>)?]`
+- **Required:** Requireable
+- **Description:** 3rd pointer moved over ("p3o":[1,`<<xy>>`]) or out of ("p3o":[0,`<<xy>>`]) current item; location where pointer left item is only sent if available
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p3p":<<number>>`
+- **Required:** Requireable
+- **Description:** 3rd pointer pressure and hover distance; some pointer devices have pressure and/or hover sensitivity -- use the "pp" event to capture when pointer pressure or hover state changes; when pointer device is hovering -1 <= `<<number>>` < 0, where -1 is max hover detection range; when pointer device is touching 0 < `<<number>>` <= 1, where 1 is highest detectable pressure; "p3p":0 is sent when 3rd pointer is no longer hovering or touching
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p4d":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 4th pointer down (tap-start) event; `<<xy>>` is the pointer location within current item; this event does repeat while pointer is held down
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p4u":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 4th pointer up (tap-end) event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p4c":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 4th pointer click (tap) event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p4cc":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 4th pointer double-click (double-tap) event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p4":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 4th pointer location-change event; `<<xy>>` is the pointer location within current item
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p4e":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** 4th pointer movement-end event; sent only when pointer stops moving for longer than 100ms (default) or whatever number of milliseconds is set via the "throt" `<<interactProp>>` for the "p4e" event
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p4o":[1|0(,<<xy>>)?]`
+- **Required:** Requireable
+- **Description:** 4th pointer moved over ("p4o":[1,`<<xy>>`]) or out of ("p4o":[0,`<<xy>>`]) current item; location where pointer left item is only sent if available
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"p4p":<<number>>`
+- **Required:** Requireable
+- **Description:** 4th pointer pressure and hover distance; some pointer devices have pressure and/or hover sensitivity -- use the "pp" event to capture when pointer pressure or hover state changes; when pointer device is hovering -1 <= `<<number>>` < 0, where -1 is max hover detection range; when pointer device is touching 0 < `<<number>>` <= 1, where 1 is highest detectable pressure; "p4p":0 is sent when 4th pointer is no longer hovering or touching
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"g":[(<<padInfo>>(,<<padInfo>>)*)?]`
+- **Required:** Requireable
+- **Description:** gamepad state for primary gamepad (or some other button or pressure-button device)
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"g2":[(<<padInfo>>(,<<padInfo>>)*)?]`
+- **Required:** Requireable
+- **Description:** gamepad state for second gamepad (or some other button or pressure-button device)
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"g3":[(<<padInfo>>(,<<padInfo>>)*)?]`
+- **Required:** Requireable
+- **Description:** gamepad state for third gamepad (or some other button or pressure-button device)
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"g4":[(<<padInfo>>(,<<padInfo>>)*)?]`
+- **Required:** Requireable
+- **Description:** gamepad state for fourth gamepad (or some other button or pressure-button device)
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"play":0|1`
+- **Required:** Requireable
+- **Description:** media play/pause event listener; fires whenever user hits play/pause
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"at":<<number>>`
+- **Required:** Requireable
+- **Description:** media position event listener; fires whenever playback position changes
+
+### `<<eventInfo>>`
+
+- **Grammar:** `"av":<<settings>>`
+- **Required:** Requireable
+- **Description:** audio/video settings; at a minimum `<<settings>>` should include "length":`<<number>>` to describe media duration in seconds; other potential `<<settings>>` that UI software may provide are "volume":`<<uint>>` (`<<uint>>` between 0 and 100), "rate":`<<number>>` (`<<number>>` signifies proportion of normal A/V speed, where 1 is normal speed), "quality":`<<text>>` (e.g., "quality":"hd1080"), and "captions":`<<text>>` (e.g., "captions":"English")
+
+## app-originated command
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!!require":{}`
+- **Shorthand:** `"require":{}`
+- **Required:** Always
+- **Description:** request the full list of options and option-values that are available (i.e., can be required) in user-agent software; APP->UI message {"!!require":{}} will trigger a corresponding response UI->APP message containing `<<userProp>>` "requirable":{(`<<required>>`(,`<<required>>`)*)?}
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!!require":{<<required>>(,<<required>>)*}`
+- **Shorthand:** `"require":{<<required>>(,<<required>>)*}`
+- **Required:** Always
+- **Description:** specify which options and option-values are required for correctly interpreting essential application requests; if any of the `<<required>>` features need to be imported/loaded, user-agent software should import and load these features upon receiving this `<<uiDirective>>`; if any of the `<<required>>` features are not implemented yet in user-agent software, the suggested behavior is to disconnect from the app after a polite {"t":`<<ums>>`,"error":"`<<required>>` is not implemented. Disconnecting."}
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!state":<<uint>>`
+- **Shorthand:** `"S":<<uint>>`
+- **Required:** Always
+- **Description:** Session closing; "S":`<<uint>>` indicates that app-software is closing and no more UI->APP messages will be received; APP->UI message {"S":`<<uint>>`,"v":null} indicates that session is over and the app window should be closed (though the ability to close app window is not guaranteed); state "S":0 indicates that app software closed normally with no errors, and "S":1 or any other `<<uint>>` indicates that app software closed abnormally due to some error, where the `<<uint>>` is the error code (0 as normal termination and non-zero integer as abnormal termination are convention exit codes in most programming languages; e.g., C/C#: return 0, Swift: exit(0), Kotlin: exitProcess(0), Java: System.exit(0))
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!state":<<text>>`
+- **Shorthand:** `"S":<<text>>`
+- **Required:** Always
+- **Description:** Session state or session id setting; `<<text>>` is the session status or identifier that must be present as part of "s" `<<userProp>>` in all subsequent UI->APP messages
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!state":null`
+- **Shorthand:** `"S":null`
+- **Required:** Always
+- **Description:** clear session state
+
+### `<<itemProp>>`
+
+- **Grammar:** `<<Command>>`
+- **Required:** Always
+- **Description:** Commands alter how properties are updated (but are not themselves lasting item properties)
+
+### `<<Command>>`
+
+- **Grammar:** `"!update":<<uid>>`
+- **Shorthand:** `"U":<<uid>>`
+- **Required:** Always
+- **Description:** update; this `<<Command>>` is only valid for container-type items; find and update item with the specified `<<uid>>` (recursive search, starting at current container); use this command only at root level (e.g., {"U":"my item","v":"hello world"}) or as a `<<qUpdate>>` inside a queue list (e.g., {"U":"my container","Q":[{"U":0,"v":"a"},{"U":1,"v":"b"},{"U":2,"v":"c"}]}), NOT inside a "value" or "add" `<<container>>` of declarations (i.e., {"value":[{"id":"my item","value":"hello"},{"U":"my item","value":"goodbye"}]} is NOT correct and may lead to unexpected results, whereas {"value":[{"id":"my item","value":"hello"}],"queue":[{"U":"my item","value":"goodbye"}]} is the correct way to add a label titled "my item" whose text is "hello", and then immediately change its text to "goodbye")
+
+### `<<Command>>`
+
+- **Grammar:** `"~add":<<container>>|<<value>>`
+- **Shorthand:** `"A":<<container>>|<<value>>`
+- **Required:** Always
+- **Description:** add to current value (or toggle value); for text items, "A":`<<text>>` appends `<<text>>` to current text value; for numeric items, "A":`<<number>>` adds `<<number>>` to current numeric value; for boolean items, "A":`<<value>>` toggles the boolean value no matter what `<<value>>` is specified
+
+### `<<Command>>`
+
+- **Grammar:** `"~~queue":[<<qUpdate>>(,<<qUpdate>>)*]`
+- **Shorthand:** `"Q":[<<qUpdate>>(,<<qUpdate>>)*]`
+- **Required:** Always
+- **Description:** queue of updates or declarations; if current APP->UI message requires multiple commands/updates/declarations to be executed in the same container, use "Q" to list all such updates; "~~queue" is processed last, after all other commands/properties in current `<<pList>>` are executed
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!error":<<text>>`
+- **Shorthand:** `"err":<<text>>`
+- **Required:** Requireable
+- **Description:** error or warning (or debugging) message to be dumped into UI error stream
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!async":<<uint>>`
+- **Shorthand:** `"&":<<uint>>`
+- **Required:** Requireable
+- **Description:** time in milliseconds since the initial UI->APP message (i.e., handshake) was received by the application; for asynchronous tasks it is good practice to include this `<<uiDirective>>` in every APP->UI messages; use {"!!require":{..."ts":[]...}} to announce to user-agent software that the application will employ asynchronous protocol (otherwise user-agent software will assume that message protocol is synchronous, such that each UI->APP message will be treated as a request by the application, and will be followed immediately by one, and only one, APP->UI response message)
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!task":{<<instructions>>(,<<instructions>>)*}`
+- **Shorthand:** `"task":{<<instructions>>(,<<instructions>>)*}`
+- **Required:** Requireable
+- **Description:** task instructions; "task" may be called multiple times, updating each `<<instructions>>` separately (e.g., APP->UI message {"task":{"end":[{"id":"Round","v":{">>":10}}]},"good":[{"id":"Gold"}]} instructs user that task ends after Round 10 and that the goal is to seek items named "Gold", and a follow-up APP->UI message {"task":{"end":[{"id":"Round","v":{">>":12}}]}} will partially update those instructions, informing user that instead of task ending after Round 10, it will end after Round 12); if task instruction specification is essential to the task, use "!!require":{..."task":[(`<<taskOptionName>>`(,`<<taskOptionName>>`)*)?]...} where `<<taskOptionName>>` is a name of `<<instructions>>`, `<<condProp>>`, `<<operator>>`, or `<<refop>>` used in instructions (i.e., "good", "bad", "win", "loss", "end", "rules","task", "and", "=", "~", ">>", ">", "<", ">=", "<=", "!=", "uid", "prop", "+", "*", "^", "min", "max")
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!templates":{<<template>>(,<<template>>)*}`
+- **Shorthand:** `"tem":{<<template>>(,<<template>>)*}`
+- **Required:** Requireable
+- **Description:** templates for quick item declarations and updates (i.e., named sets of property updates that may be used via the "Q" command or "df" and "fs" properties); changing a `<<template>>` does not affect items that were previously created/updated using this template; "!templates" may be called multiple times, updating each `<<template>>` separately
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!style":<<text>>`
+- **Shorthand:** `"style":<<text>>`
+- **Required:** Requireable
+- **Description:** load preferred style template; use "!style" to specify preferred spacing, fonts, colors, background images, sound-effects, sprite animation, and other aspects of aesthetic appeal in human-centric UI (i.e., features that would not be needed for computational agents to correctly determine UI functionality); `<<text>>` is likely a set of CSS rules or a URL of a style-sheet, though it may contain other styling resource specific to a given UI software framework (e.g. javascript); "!style" directive may be called multiple times to load multiple parts of a style template
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!time":<<ums>>`
+- **Shorthand:** `"T":<<ums>>`
+- **Required:** Requireable
+- **Description:** time scheduling for current declaration/update; used to delay the processing of the current update until user time has reached the specified `<<ums>>`
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!trigger":{(<<userPropTrigger>>(,(<<userPropTrigger>>)*)?}`
+- **Shorthand:** `"Tr":{(<<userPropTrigger>>(,(<<userPropTrigger>>)*)?}`
+- **Required:** Requireable
+- **Description:** trigger rule for current update; current update/declaration is triggered whenever UI->APP message matches the specified `<<userProp>>`'s; use "Tr":{} as a wildcard to trigger whenever any UI->APP message is sent; use "Tr":{...`<<userPropName>>`:{}...} as a wildcard to trigger whenever a UI->APP message includes `<<pName>>`, regardless of its corresponding value; use "Tr":{..."u":null...} to set up a trigger for root container events
+
+### `<<Command>>`
+
+- **Grammar:** `"!timeDelay":<<number>>`
+- **Shorthand:** `"Td":<<number>>`
+- **Required:** Requireable
+- **Description:** timed delay (i.e., timeout) prior to update; `<<number>>` is the number of seconds (according to user-agent clock) to delay
+
+### `<<Command>>`
+
+- **Grammar:** `"!timeInterval":<<number>>`
+- **Shorthand:** `"Ti":<<number>>`
+- **Required:** Requireable
+- **Description:** time interval for current update; `<<number>>` is the number of seconds (according to user-agent clock) to delay between update executions; if `<<number>>` is less than UI refresh rate, interval will fire at the speed of UI refresh rate; "Ti" does not cause a delay before initial update (use "Td" to add that delay)
+
+### `<<Command>>`
+
+- **Grammar:** `"!timingName":<<text>>`
+- **Shorthand:** `"Tn":<<text>>`
+- **Required:** Requireable
+- **Description:** timer or trigger name; naming an update scheduled via "T", "Tr", "Td", and/or "Ti" commands enables its later cancellation via `<<uiDirective>>` "Tc":`<<text>>`
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!timingCancel":<<text>>`
+- **Shorthand:** `"Tc":<<text>>`
+- **Required:** Requireable
+- **Description:** cancel named scheduled updates; `<<text>>` is the name of the update, as specified via "Tn" `<<Command>>`
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!timingCancel":{}`
+- **Shorthand:** `"Tc":{}`
+- **Required:** Requireable
+- **Description:** cancel all updates scheduled via "T", "Tr", "Td", and "Ti" commands (regardless whether they were named)
+
+### `<<Command>>`
+
+- **Grammar:** `"!updateChildren":{(<<matchByVal>>(,<<matchByVal>>)*)?}`
+- **Shorthand:** `"U\*":{(<<matchByVal>>(,<<matchByVal>>)*)?}`
+- **Required:** Requireable
+- **Description:** update multiple child items of current container; this `<<Command>>` is only valid for container-type items; select all items that match all `<<matchByVal>>`'s in current container and update them according to current property specifications; if there are no `<<matchByVal>>`'s (i.e., "U*":{}), all items are selected
+
+### `<<Command>>`
+
+- **Grammar:** `"!updateDeep":{(<<matchByVal>>(,<<matchByVal>>)*)?}`
+- **Shorthand:** `"U\*\*":{(<<matchByVal>>(,<<matchByVal>>)*)?}`
+- **Required:** Requireable
+- **Description:** Update multiple descendants of current container, recursively; this `<<Command>>` is only valid for container-type items; select all items that match all `<<matchByVal>>`'s in current container and all its children, recursively, and update them according to current property specifications; if there are no `<<matchByVal>>`'s (i.e., "U**":{}), all items are selected
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!~open":"<<url>>"`
+- **Shorthand:** `"open":"<<url>>"`
+- **Required:** Requireable
+- **Description:** open (or download) external resource
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!~save":[<<text>>,<<text>>]`
+- **Shorthand:** `"save":[<<text>>,<<text>>]`
+- **Required:** Requireable
+- **Description:** save text/data to user's local file; the first `<<text>>` parameter is the filename, and the second is the text/data to be saved
+
+### `<<uiDirective>>`
+
+- **Grammar:** `"!~save":[<<text>>,<<text>>,"base64"]`
+- **Shorthand:** `"save":[<<text>>,<<text>>,"base64"]`
+- **Required:** Requireable
+- **Description:** save binary data to user's local file; the first `<<text>>` parameter is the filename, and the second is the base64-encoded binary data to be saved; UI software will decode data from base64 to binary before saving to a file
+
+### `<<Command>>`
+
+- **Grammar:** `"!~loading":1|0`
+- **Shorthand:** `"loading":1|0`
+- **Required:** Requireable
+- **Description:** "!~loading":1 shows a wait/loading modal on top of the current container (usually semi-transparent), preventing interaction with all items in this container; "!~loading":0 (or "!~loading":null) removes the loading modal, re-enabling interaction with display
+
+### `<<Command>>`
+
+- **Grammar:** `"!~move":<<uid>>`
+- **Shorthand:** `"M":<<uid>>`
+- **Required:** Requireable
+- **Description:** Move item from its current parent to container specified by `<<uid>>`
+
+### `<<Command>>`
+
+- **Grammar:** `"~addTags":[<<tag>>(,<<tag>>)*]`
+- **Shorthand:** `"Atag":[<<tag>>(,<<tag>>)*]`
+- **Required:** Requireable
+- **Description:** Add tags to item's "tag" `<<property>>`; each `<<tag>>` indicates the item is semantically [and thus visually] distinct from items that do not share this `<<tag>>`; if `<<tag>>` is not already in this item's "tag" `<<property>>`, it is added; if this item has no "tag" `<<property>>` or "tag" is an empty-list, then "Atag":[`<<tag>>`(,`<<tag>>`)*] is equivalent to "tag":[`<<tag>>`(,`<<tag>>`)*]
+
+### `<<Command>>`
+
+- **Grammar:** `"~properties":{<<propName>>:<<values>>(,<<propName>>:<<values>>)*}`
+- **Shorthand:** `"<-":{<<propName>>:<<values>>(,<<propName>>:<<values>>)*}`
+- **Required:** Requireable
+- **Description:** assign property values in a series; for container-type items only; each `<<value>>` in `<<values>>` gets assigned to this container's respective child's `<<propName>>` property
+
+### `<<Command>>`
+
+- **Grammar:** `"~request":[(<<req>>(,<<req>>)*)?]`
+- **Shorthand:** `"R":[(<<req>>(,<<req>>)*)?]`
+- **Required:** Requireable
+- **Description:** Request info; [(`<<req>>`(,`<<req>>`)*)?] describes the information to be sent back to application software; if no specific information is requested (i.e., "R":[]), a message with `<<userProp>>` "r" is still returned (e.g., APP->UI message {"R":[]} will be ensued by UI->APP message {"t":`<<ums>>`,"r":{}}); for items that have children, `<<req>>` "v" returns the child array in accordance with the display object-model (e.g., APP->UI message {"v":["hello",12],"R":["v"]} will be ensued by UI->APP message {"t":`<<ums>>`,"r":{"v":[{"c":"txt","v":"hello"},{"c":"num","v":12}]}}); if `<<req>>` information is unavailable, the UI->APP message must include `<<req>>`:null for the corresponding `<<req>>` (i.e., every requested `<<req>>` text must be included as a key in the ensuing UI->APP message, even if it's not a known name of a property)
+
+### `<<Command>>`
+
+- **Grammar:** `<<eventInfo>>`
+- **Required:** Requireable
+- **Description:** simulate a user-generated event; this is useful for triggering updates bound to a "!trigger" or, in the case where `<<eventInfo>>` is "ctx":[(`<<xy>>`)?], for bringing up a `<<contextMenu>>` for items that have "onContext":`<<contextMenu>>` property
+
+## widget property
+
+### `<<uiDirective>>`
+
+- **Grammar:** `<<itemProp>>`
+- **Required:** Always
+- **Description:** options for root container; root container is a special container that has no id, no class, and cannot be deleted; only allows its "v" property to be `<<container>>` (not `<<value>>`)
+
+### `<<itemProp>>`
+
+- **Grammar:** `<<property>>`
+- **Required:** Always
+- **Description:** set item property
+
+### `<<property>>`
+
+- **Grammar:** `"Class":<<itemClass>>`
+- **Shorthand:** `"c":<<itemClass>>`
+- **Required:** Always
+- **Description:** class of UI component (i.e., widget type); if "c" `<<property>>` is not specified, it will be automatically derived from value type (i.e., if `<<property>>` "v" is an array, a number, a boolean, or text, `<<itemClass>>` will be automatically set to "bin", "num", "btn", or "txt", respectively); if neither "c" nor "v" properties are specified, default component class is "bin" (i.e., [{"id":`<<id>>`}] is equivalent to [{"id":`<<id>>`,"c":"bin"}]); item class is tied to item value type (i.e. array, text, number, or boolean), such that "c" `<<property>>` will change if "v" `<<property>>` is set to an incompatible value, and vice versa (see "v" `<<property>>` description for more detail); this property cannot be set for root container
+
+### `<<property>>`
+
+- **Grammar:** `"id":<<id>>`
+- **Shorthand:** `"id":<<id>>`
+- **Required:** Always
+- **Description:** item id; root-level container has no "id" attribute ("id":null); item `<<id>>` will be displayed as item caption/title (see `<<property>>` "cap" below for alternate behavior); WARNING: "id" uniqueness within a given container is up to APP software, and if two items in the same container have the same "id", (1) updating them via "U" command becomes problematic, and (2) user interactions with these items may be indistinguishable (e.g., APP->UI message {"A":[{"id":"click me","v":false},{"id":"click me","v":false}]} will add two "click me" buttons to display, and when user clicks either of them, the UI->APP messages will be indistinguishable, either one reading {"t":`<<ums>>`,"u":"click me","v":true})
+
+### `<<property>>`
+
+- **Grammar:** `"value":<<container>>|<<value>>`
+- **Shorthand:** `"v":<<container>>|<<value>>`
+- **Required:** Always
+- **Description:** set item value; setting "v" to null removes the item from display; "v" is a special property whose value type always corresponds to UI component class (i.e., "v" numeric and text values indicate numeric and text UI components, boolean values indicate buttons, and an array indicates a container bin), so changing "v" `<<property>>` to a different value type will also change the UI component accordingly (e.g., APP->UI message [{"id":"X","v":3.14}] will add a numeric item X whose value is 3.14 to display, and a follow-up APP->UI message {"U":"X","v":"Pi"} will change the component from a numeric to a text element that says "Pi")
+
+### `<<property>>`
+
+- **Grammar:** `"index":<<index>>`
+- **Shorthand:** `"i":<<index>>`
+- **Required:** Requireable
+- **Description:** index number for current item; `<<index>>` is zero-indexed; if `<<index>>` is negative, it indicates reverse order (i.e., "index":-1 places current item at the end of its parent container, "index":-2 places current item in next-to-last spot in current container, etc.); if another item, X, with index number `<<index>>` exists in current current container, this item is inserted before X; if no item with `<<index>>` exists in current container, this item is moved to end of container
+
+### `<<property>>`
+
+- **Grammar:** `"caption":<<captionText>>`
+- **Shorthand:** `"cap":<<captionText>>`
+- **Required:** Requireable
+- **Description:** visible caption/title (replaces item id as the visible title); `<<captionText>>` is standard `<<text>>` with one exception -- it may include inline images (icons) indicated via the following escape sequence: ![`<<altTxt>>`](`<<url>>`), where `<<altTxt>>` is optional text to display if the `<<url>>` resource is not loading (if no `<<altTxt>>` is specified and there is an error loading the image, nothing is shown)
+
+### `<<property>>`
+
+- **Grammar:** `"effect":<<number>>`
+- **Shorthand:** `"ef":<<number>>`
+- **Required:** Requireable
+- **Description:** effect/strength (i.e., item's importance/prominence); `<<number>>` must be between -1 and 1 (default is 0); for human users higher effect/strength will make item more visually emphasized (e.g. thicker, brighter, vibrating) and lower strength will make item less visually emphasized (e.g. thinner, dimmer, smaller font); UI for human users will not always be capable of displaying fine-grained differences between different effect strengths, so using just the 3 possible integer values (-1,0,1), or even 5 values (-1,-0.5,0,0.5,1), is far better than using 6 or more floating point values for the "ef" `<<property>>`; when to use "ef" vs "af" vs "tag": use "tag" to indicate category differences, use "ef" to indicate critical level of information, use "af" to indicate positive or negative sentiment
+
+### `<<property>>`
+
+- **Grammar:** `"affect":<<number>>`
+- **Shorthand:** `"af":<<number>>`
+- **Required:** Requireable
+- **Description:** affect/sentiment (i.e., item's positive or negative valence); `<<number>>` must be between -1 and 1 (default is 0); for human users higher affect value will make item more visually positive (e.g., blue or green) and lower strength will make item less visually emphasized (e.g., red or orange); UI for human users will not always be capable of displaying fine-grained differences between different effect strengths, so using just the 3 possible integer values (-1,0,1), or even 5 values (-1,-0.5,0,0.5,1), is far better than using 6 or more floating point values for the "af" `<<property>>`; when to use "ef" vs "af" vs "tag": use "tag" to indicate category differences, use "ef" to indicate critical level of information, use "af" to indicate positive or negative sentiment
+
+### `<<property>>`
+
+- **Grammar:** `"tag":[<<tag>>(,<<tag>>)*]`
+- **Required:** Requireable
+- **Description:** set item tags to indicate emphasis; each `<<tag>>` indicates the item is semantically [and thus visually] distinct from items that do not share this `<<tag>>`; when to use "ef" vs "af" vs "tag": use "tag" to indicate category differences, use "ef" to indicate critical level of information, use "af" to indicate positive or negative sentiment
+
+### `<<property>>`
+
+- **Grammar:** `"tip":<<text>>`
+- **Required:** Requireable
+- **Description:** tooltip text to display when user needs more information about current item (e.g. for human users this is usually displayed when user hovers over the item)
+
+### `<<property>>`
+
+- **Grammar:** `"reference":[<<uid>>(,<<uid>>)*]`
+- **Shorthand:** `"ref":[<<uid>>(,<<uid>>)*]`
+- **Required:** Requireable
+- **Description:** references to other items describing this item (e.g. footnotes, citations)
+
+### `<<property>>`
+
+- **Grammar:** `"scrollX":<<number>>`
+- **Shorthand:** `"sx":<<number>>`
+- **Required:** Requireable
+- **Description:** horizontal scrolling for items that may have content exceeding visible width (e.g., "bin", "txt", "win"); `<<number>>` signifies scroll percentage -- must be between 0 and 100, where "sx":0 signifies that left-most part of content is visible, and "sx":100 signifies that right-most part of content is visible; does not auto-scroll as new content gets added
+
+### `<<property>>`
+
+- **Grammar:** `"scrollY":<<number>>`
+- **Shorthand:** `"sy":<<number>>`
+- **Required:** Requireable
+- **Description:** vertical scrolling for items that may have content exceeding visible height (e.g., "bin", "txt", "win"); `<<number>>` signifies scroll percentage -- must be between 0 and 100, where "sy":0 signifies that top-most part of content is visible, and "sy":100 signifies that bottom-most part of content is visible; does not auto-scroll as new content gets added
+
+### `<<property>>`
+
+- **Grammar:** `<<interactProp>>`
+- **Required:** Requireable
+- **Description:** user-interaction options
+
+### `<<property>>`
+
+- **Grammar:** `<<containerProp>>`
+- **Required:** Requireable
+- **Description:** options for items of class "bin", "win", "grid", "one", "plot", "2d", "3d", "data", and "gr"
+
+### `<<property>>`
+
+- **Grammar:** `<<binProp>>`
+- **Required:** Requireable
+- **Description:** options for bin-like containers -- "bin", "win", "grid", "one", "plot", "2d", "3d"
+
+### `<<property>>`
+
+- **Grammar:** `<<numProp>>`
+- **Required:** Requireable
+- **Description:** numeric-type item options ("num", "dt", "time")
+
+### `<<property>>`
+
+- **Grammar:** `<<txtProp>>`
+- **Required:** Requireable
+- **Description:** "txt" and "doc" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<holdProp>>`
+- **Required:** Requireable
+- **Description:** "hold" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<optProp>>`
+- **Required:** Requireable
+- **Description:** "opt" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<ctxProp>>`
+- **Required:** Requireable
+- **Description:** "ctx" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<winProp>>`
+- **Required:** Requireable
+- **Description:** "win" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<gridProp>>`
+- **Required:** Requireable
+- **Description:** "grid" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<fileProp>>`
+- **Required:** Requireable
+- **Description:** "file" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<mediaProp>>`
+- **Required:** Requireable
+- **Description:** "media" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<plotProp>>`
+- **Required:** Requireable
+- **Description:** "plot" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<dataProp>>`
+- **Required:** Requireable
+- **Description:** "data" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<dpProp>>`
+- **Required:** Requireable
+- **Description:** "dp" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<viewportProp>>`
+- **Required:** Requireable
+- **Description:** "2d" and "3d" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<grgProp>>`
+- **Required:** Requireable
+- **Description:** "grg" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<grProp>>`
+- **Required:** Requireable
+- **Description:** "gr" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<lProp>>`
+- **Required:** Requireable
+- **Description:** "l" item options
+
+### `<<property>>`
+
+- **Grammar:** `<<animation>>`
+- **Required:** Requireable
+- **Description:** animation options
+
+### `<<interactProp>>`
+
+- **Grammar:** `"input":0|1`
+- **Shorthand:** `"in":0|1`
+- **Required:** Requireable
+- **Description:** interactive/input flag to signify whether user-input is disabled or enabled; item classes that can be interactive include all items whose value is `<<boolean>>` ("btn", "opt", "hold"), whose value is `<<number>>` ("num", "dt", "time"), and whose value is `<<text>>` ("txt", "rgb", "math", "doc"); "in":0 (default for `<<itemClass>>` "num", "dt", "time", "txt", "math", "rgb", "doc") signifies input is disabled, and "in":1 (default for `<<itemClass>>` "btn", "hold", "opt") signifies input is enabled; enabling user input means that the user can toggle item value (`<<property>>` "v"), and when user updates item value, UI software will send a UI->APP message that would look as such: {"t":`<<ums>>`,"u":`<<uid>>`,"v":`<<value>>`}; `<<itemClass>>` "txt" must include a newline in the value to enable multi-line input (e.g. [{"id":"name","v":"","in":1},{"id":"story","v":"\n","in":1}] creates a single-line text input field called "name" and a multi-line one called "story"); WARNING: when building computational agents to interact with UINL apps, never try to interact with disabled controls, because application code is not be expecting any interactions from those controls, and such interactions may be ignored or may cause unexpected behavior
+
+### `<<interactProp>>`
+
+- **Grammar:** `"input":-1`
+- **Shorthand:** `"in":-1`
+- **Required:** Requireable
+- **Description:** disable input/interaction for all items in current container or frame; only for `<<container>>` components "bin", "win", "grid", "one", and `<<url>>` components "url" and "media"; setting "in":-1 for a container effectively disables all buttons/inputs and media interaction for all descendant items in said container; WARNING: when building computational agents to interact with UINL apps, never try to interact with disabled controls, because application code is not be expecting any interactions from those controls, and such interactions may be ignored or may cause unexpected behavior
+
+### `<<interactProp>>`
+
+- **Grammar:** `"goButton":1`
+- **Shorthand:** `"go":1`
+- **Required:** Requireable
+- **Description:** "Go" button functionality; "Go" action for text and numeric type inputs; if text or numeric item has enabled input, adding "go":1 `<<interactProp>>` for this item will add a button (usually displayed in GUI as right-arrow icon or "Go" button) next to the input, and (1) would send UI->APP message with item value whenever user clicks this button, and (2) would disable the default behavior of sending UI->APP messages with item value whenever this input loses focus
+
+### `<<interactProp>>`
+
+- **Grammar:** `"focus":1|0`
+- **Shorthand:** `"fcs":1|0`
+- **Required:** Requireable
+- **Description:** input focus; "fcs":1 puts focus on current item (if possible) and removes focus from any other item; "fcs":0 removes focus from current item
+
+### `<<interactProp>>`
+
+- **Grammar:** `"keyShortcuts":[<<keyShortcut>>(,<<keyShortcut>>)*]`
+- **Shorthand:** `"keys":[<<keyShortcut>>(,<<keyShortcut>>)*]`
+- **Required:** Requireable
+- **Description:** keyboard shortcuts assigned to an item; if this item is an interactive (not disabled) `<<boolean>>` (i.e., button, select), keyboard shortcut toggles the item value (i.e., button is pressed, or item is selected) --- otherwise, if this item has a "fold" control, keyboard shortcut toggles item fold state (folds or unfolds it) --- otherwise, if this item is interactive ("in":1), keyboard shortcut will toggle item focus ("fcs" property changed to 1 if it's 0, or to 0 if it's 1)
+
+### `<<interactProp>>`
+
+- **Grammar:** `"onContext":<<contextMenu>>`
+- **Shorthand:** `"onctx":<<contextMenu>>`
+- **Required:** Requireable
+- **Description:** context menu event listener and action; `<<contextMenu>>` describes an item with `<<itemClass>>` "ctx" to be added to display (in root container) whenever this item is right-clicked (or long-tapped or some other method provided by current system to bring up context menu); the context menu is drawn hovering above other content, aligned to current item (usually at location of pointer), and is automatically deleted from display when this item loses focus or when one of its inputs is edited or toggled; every item inside a "ctx" container is a button (i.e., "Class":"btn") by default (use "defaults" property for alternate behavior); in addition to `<<contextMenu>>` being added to display, UI->APP message {"t":`<<ums>>`,"u":`<<uid>>`,"ctx":[`<<xy>>`?]} will be sent; this `<<contextMenu>>` will also be displayed whenever the APP->UI message simulates a context-menu event for this item via a "ctx":[`<<xy>>`?] command; "onContext":`<<contextMenu>>` behavior can also be accomplished with `<<interactProp>>` "on":["ctx"] with an additional trigger setup {"!trigger":{"u":`<<uid>>`,"ctx":{}},"~add":[`<<contextMenu>>`]}
+
+### `<<interactProp>>`
+
+- **Grammar:** `"onEvent":{<<event>>:<<prec>>(,<<event>>:<<prec>>)*}`
+- **Shorthand:** `"on":{<<event>>:<<prec>>(,<<event>>:<<prec>>)*}`
+- **Required:** Requireable
+- **Description:** state-change event listeners; only triggered when `<<event>>` state-change is due to user action or user-software (i.e., not when the change is due to APP->UI message, scheduling command, or animation); `<<prec>>` declares a precision/filter for captured events (use `<<prec>>` [] to capture all events of the corresponding type; see `<<prec>>` definition for more detail)
+
+### `<<interactProp>>`
+
+- **Grammar:** `"onEvent":[<<event>>(,<<event>>)*]`
+- **Shorthand:** `"on":[<<event>>(,<<event>>)*]`
+- **Required:** Requireable
+- **Description:** state-change event listeners; only triggered when `<<event>>` state-change is due to user action or user-software (i.e., not when the change is due to APP->UI message, scheduling command, or animation)
+
+### `<<interactProp>>`
+
+- **Grammar:** `"eventLeaf":[<<event>>(,<<event>>)*]`
+- **Shorthand:** `"leaf":[<<event>>(,<<event>>)*]`
+- **Required:** Requireable
+- **Description:** event option for container items signifying that any `<<event>>` that occurs inside a descendant of this container should be attributed to that descendant via `<<userProp>>` "ul"
+
+### `<<interactProp>>`
+
+- **Grammar:** `"throttle":{<<event>>:<<uint>>(,<<event>>:<<uint>>)*}`
+- **Shorthand:** `"throt":{<<event>>:<<uint>>(,<<event>>:<<uint>>)*}`
+- **Required:** Requireable
+- **Description:** throttle event processing; specifies minimum timeout between same event triggers (in milliseconds)
+
+### `<<interactProp>>`
+
+- **Grammar:** `"foldable":0|1|2`
+- **Shorthand:** `"fold":0|1|2`
+- **Required:** Requireable
+- **Description:** container is foldable/minimizable; works for any container except root container; "fold":0 (default) is the absence of any fold control, "fold":1 means that item is fully visible, but has a fold control (i.e. a button that minimizes the item), and "fold":2 means that item is folded (i.e. minimized) and has a control that would unfold it; UI->APP message {"t":`<<ums>>`,"u":`<<uid>>`,"fold":1} or {"t":`<<ums>>`,"u":`<<uid>>`,"fold":2} is sent when container is folded/unfolded; avoid marking items foldable as an arbitrary style choice -- rather, mark an item as folded/foldable to signify reduced prominence of this item's content (as compared to items that are always in full view); WARNING: when building computational agents to interact with UINL apps, treat "fold":2 containers as if they had all their controls disabled, because application code may not be expecting any interactions from controls in a folded container
+
+### `<<interactProp>>`
+
+- **Grammar:** `"closeable":1`
+- **Shorthand:** `"cls":1`
+- **Required:** Requireable
+- **Description:** close functionality; enable user to close (i.e., remove from display) current container (e.g., has a button, usually ❌, that closes current container when clicked); works for any container except root container; when item is closed, UI->APP message will be sent {"t":`<<ums>>`,"u":`<<uid>>`,"v":null}, where `<<uid>>` refers to this container
+
+### `<<interactProp>>`
+
+- **Grammar:** `"deletable":1`
+- **Shorthand:** `"del":1`
+- **Required:** Requireable
+- **Description:** delete functionality; enable user to delete (i.e., remove from display) current item (e.g., has a button like ❌ or 🗑, that deletes current item when clicked); works for any item that is not a container; when item is deleted, UI->APP message will be sent {"t":`<<ums>>`,"u":`<<uid>>`,"v":null}
+
+### `<<interactProp>>`
+
+- **Grammar:** `"reorderable":1`
+- **Shorthand:** `"ro":1`
+- **Required:** Requireable
+- **Description:** re-order functionality; enable user to reorder items in current container; when user is done reordering a given item, UI->APP message {"t":`<<ums>>`,"u":`<<uid>>`,"i":`<<uint>>`} is sent
+
+### `<<interactProp>>`
+
+- **Grammar:** `"movable":[<<uid>>(,<<uid>>)*]`
+- **Shorthand:** `"mv":[<<uid>>(,<<uid>>)*]`
+- **Required:** Requireable
+- **Description:** enable user to be able to move (e.g. drag and drop) current item into another container; when user is done moving a given item, UI->APP message {"t":`<<ums>>`,"u":`<<uid>>`,"m":`<<uid>>`} is sent; when item is moved, it becomes the last item in target container (see `<<interactProp>>` "ro":1 for alternate behavior)
+
+### `<<interactProp>>`
+
+- **Grammar:** `"movableDeep":[<<uid>>(,<<uid>>)*]`
+- **Shorthand:** `"mv\*":[<<uid>>(,<<uid>>)*]`
+- **Required:** Requireable
+- **Description:** enable user to be able to move (e.g. drag and drop) current item into another container, or into any of its descendant containers; when user is done moving a given item, UI->APP message {"t":`<<ums>>`,"u":`<<uid>>`,"m":`<<uid>>`} is sent; when item is moved, it becomes the last item in target container (see `<<interactProp>>` "ro":1 for alternate behavior)
+
+### `<<interactProp>>`
+
+- **Grammar:** `"hash":[<<hashType>>,<<text>>]`
+- **Required:** Requireable
+- **Description:** hash text input prior to sending (useful to add a layer of security, *NOT* to replace server-side hashing); `<<text>>` is appended (i.e., added at the end) to item text before hashing (i.e., salt before hashing)
+
+### `<<interactProp>>`
+
+- **Grammar:** `"encrypt":[<<encryption>>,<<text>>]`
+- **Shorthand:** `"enc":[<<encryption>>,<<text>>]`
+- **Required:** Requireable
+- **Description:** encrypt input value prior to sending (useful to add a layer of security); `<<text>>` is the encryption key
+
+### `<<containerProp>>`
+
+- **Grammar:** `"defaults":<<qUpdate>>`
+- **Shorthand:** `"df":<<qUpdate>>`
+- **Required:** Requireable
+- **Description:** default template for descendant element creation; a child container can override some or all default properties with its own "df" specification (note: df inheritance is *shallow*, such that a container that is overriding any part of a property's default value overrides the entire default value for that property); default template cannot include "id"; if a default template includes item value, the value can never be an array (for safety reasons, to prevent infinite loops); defaults are never applied when such application might be illegal (e.g., {"A":[{"c":"grid","df":{"c":"num"}}]} adds a grid to display whose cell class types will be "num" by default, but grid rows will still be of class type "bin" because only "bin" items are allowed as children of "grid"); if default template includes "c", it is only applied to children whose "v" property isn't declared, or is compatible (e.g. class "opt" is only compatible with boolean values, so {"df":{"c":"opt"},"v":["hello","world",{"id":"a"},{"id":"b","v":false}]} will add two text items, "hello" and "world", and two selectable options "a" and "b"); if default template includes "v", it is only applied to children whose "c" property isn't declared, or is compatible (e.g. class "opt" is only compatible with boolean values, so {"df":{"v":true},"v":[{"id":"a","c":"opt"},{"id":"b","c":"num"}]} will add a selectable option item "a" with a value of true, and a numeric item "b" with a default numeric value (0))
+
+### `<<binProp>>`
+
+- **Grammar:** `"size":[<<xy>>]`
+- **Shorthand:** `"wh":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** size of container; `<<xy>>` specifies this container's width and height; do not use this option for aesthetics, only when it is essential to task (e.g. for replay); this option is likely ignored by computational agents; there is no guarantee whether content inside current container is scaled when "wh" changes
+
+### `<<numProp>>`
+
+- **Grammar:** `"min":<<number>>`
+- **Required:** Requireable
+- **Description:** minimum displayable value
+
+### `<<numProp>>`
+
+- **Grammar:** `"max":<<number>>`
+- **Required:** Requireable
+- **Description:** maximum displayable value
+
+### `<<numProp>>`
+
+- **Grammar:** `"step":<<number>>`
+- **Required:** Requireable
+- **Description:** step for current numeric value; `<<number>>` must be greater than zero; rounds displayable to nearest multiple of `<<number>>` (e.g., both {"v":1.75,"step":2} and {"v":2.15,"step":2} will be displayed as 2); if `<<numProp>>` "min" is present, valid values begin at "min" (e.g. {"c":"num","min":1,"step":2} is a numeric item that only displays odd positive integers), otherwise they begin at 0 and go in both directions (e.g., {"c":"num","step":2} is a numeric item that only displays even integers)
+
+### `<<numProp>>`
+
+- **Grammar:** `"unit":<<text>>`
+- **Required:** Requireable
+- **Description:** unit of measurement (e.g. "$", "%", "kg", "€ million", "$ k")
+
+### `<<numProp>>`
+
+- **Grammar:** `"logScale":<<number>>`
+- **Shorthand:** `"log":<<number>>`
+- **Required:** Requireable
+- **Description:** current numeric value is in log-scale; `<<number>>` specifies the base of the scale; `<<numProp>>` "log" interacts with `<<numProp>>` "min" and `<<numProp>>` "step", such that the first exponent, X, is log base-"log" of "min", and each next value after "min" that is allowed for current item is "log" raised to X, where X is incremented by "step" until "log" raised to X exceeds `<<numProp>>` "max"; if `<<numProp>>` "log" is specified, but "step" or "min" are not, "step" and "min" are both assumed to be 1.0
+
+### `<<txtProp>>`
+
+- **Grammar:** `"length":<<uint>>`
+- **Shorthand:** `"len":<<uint>>`
+- **Required:** Requireable
+- **Description:** max number of characters; for "doc" components max number of characters includes markup
+
+### `<<txtProp>>`
+
+- **Grammar:** `"markText":[<<number>>,<<number>>]`
+- **Shorthand:** `"mark":[<<number>>,<<number>>]`
+- **Required:** Requireable
+- **Description:** mark text region selection; `<<number>>`,`<<number>>` are start and end of region selection, respectively; each `<<number>>` must be an integer; when `<<number>>` is negative, characters are counted from end of string, where -1 is the end of text (i.e., "mark":[0,-1] selects entire text); WARNING: for "doc" components, the start/end of region selection includes markup in editable mode ("input":1) and does not include markup in non-editable mode ("input":0)
+
+### `<<txtProp>>`
+
+- **Grammar:** `"format":<<format>>`
+- **Shorthand:** `"fmt":<<format>>`
+- **Required:** Requireable
+- **Description:** format type for "txt" and "doc" components; if certain markup format is required for "doc" components, or certain syntax highlighting is required for "txt" components, app software should check that UI software can handle these via the "!!require" directive (e.g. {"!!require":{"fmt":[".md",".csv"]}} ensures that markdown format is supported for "doc" components and that CSV syntax highlighting is supported for "txt" components)
+
+### `<<fileProp>>`
+
+- **Grammar:** `"accepts":"bin"`
+- **Required:** Requireable
+- **Description:** single file selection, binary format assumed; "accepts":"bin" (default) means that UI software will convert file contents to base64 before sending this content via UI->APP message
+
+### `<<fileProp>>`
+
+- **Grammar:** `"accepts":"text"`
+- **Required:** Requireable
+- **Description:** single file selection, text format assumed; "accepts":"text" means that UI software will NOT change file contents before sending to App software via a UI->APP message (WARNING: this may result in loss of data or error if the file is in binary format)
+
+### `<<fileProp>>`
+
+- **Grammar:** `"accepts":<<uint>>`
+- **Required:** Requireable
+- **Description:** single or multiple file selection, file(s) added to a zip archive before sending to app software; "accepts":1 means that this file chooser only allows selecting a single file; "accepts":`<<uint>>` where `<<uint>>` is greater than 1 enables choosing more than one file; selected files are added to a zip archive, and the zip archive content is converted to base64 before sending this content via UI->APP message; use this option if you want to preserve original file name(s) (zip archive includes original file names)
+
+### `<<fileProp>>`
+
+- **Grammar:** `"format":<<fileTypes>>`
+- **Shorthand:** `"fmt":<<fileTypes>>`
+- **Required:** Requireable
+- **Description:** specify which file formats are allowed for user file selection (e.g., "fmt":".jpg,.jpeg,.png" allows JPEG and PNG file selection)
+
+### `<<optProp>>`
+
+- **Grammar:** `"optionGroup":<<text>>`
+- **Shorthand:** `"grp":<<text>>`
+- **Required:** Requireable
+- **Description:** option group; if this property is present (not null), the "opt" item belongs to a group (named via `<<text>>`) where only one item can be selected at a time (e.g. radio-buttons, where selecting one button deselects previously selected item in the same group); when a new item in group is selected, a previously selected item in this group is automatically deselected (setting its value to false), but does *NOT* send a UI->APP {..."v":false...} message (i.e., its deselection will be presumed by app software because it's in the same "grp" as the newly selected item)
+
+### `<<holdProp>>`
+
+- **Grammar:** `"holdGroup":<<text>>`
+- **Shorthand:** `"hgrp":<<text>>`
+- **Required:** Requireable
+- **Description:** hold-button group; if this property is present (not null), the "hold" item belongs to a group (named via `<<text>>`) where, once one of the "hold" buttons is pressed down, moving pointer/mouse over another "hold" item in the same group (without stopping the press-down action) will automatically press down (set value to true) that item; when a new holddown button is selected in this way, the previously selected button will be automatically deselected, but may *NOT* send a UI->APP {..."v":false...} message (i.e., its deselection will be presumed by app software because it's in the same "hgrp" as the newly selected item)
+
+### `<<ctxProp>>`
+
+- **Grammar:** `"reference":<<uid>>`
+- **Shorthand:** `"ref":<<uid>>`
+- **Required:** Requireable
+- **Description:** placement of context menu; when this option is present and not null, this context menu and is drawn aligned to (or somehow pointing to) the location of the item indicated by `<<uid>>` (usually at the location of the pointer); when this option is absent (or null), UI software will take its best guess as to where to draw this context menu (usually aligned to the last focused item, likely at last location of the pointer action)
+
+### `<<ctxProp>>`
+
+- **Grammar:** `"location":[<<xy>>]`
+- **Shorthand:** `"xy":<<xy>>`
+- **Required:** Requireable
+- **Description:** coordinate location of context menu; when this option is present and not null, this context menu and is drawn aligned to (or somehow stemming from) the `<<xy>>` coordinates within the "reference" item; when this option is absent (or null), UI software will take its best guess as to where to draw this context menu (likely at last location of the pointer action)
+
+### `<<winProp>>`
+
+- **Grammar:** `"modal":1`
+- **Shorthand:** `"mod":1`
+- **Required:** Requireable
+- **Description:** window modality; "mod":1 makes window modal -- prevents interactions with all sibling items that are lower in the stack-order (i.e., have lower index property "i"), and setting "mod" to null or removing this window will re-enable interactions
+
+### `<<winProp>>`
+
+- **Grammar:** `"location":[<<xy>>]`
+- **Shorthand:** `"xy":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** location of "win" item's top-left corner relative to its parent top-left corner; do not use this option for aesthetics, only when it is essential to task (e.g. for replay)
+
+### `<<gridProp>>`
+
+- **Grammar:** `"headerRow":1`
+- **Shorthand:** `"head":1`
+- **Required:** Requireable
+- **Description:** header row; this flag indicates that the first row of the current grid is a header row, which has special functionality -- the caption for header row is the header for the first grid column (the grid column which contains all the other row captions, see "Employee ID" example below), and header row cells are tied to their respective columns in terms of (1) placement (when index for a cell in header row is changed by setting property "i":`<<uint>>` for that cell or via "ro":1 functionality, the entire column is moved, not just that one cell), (2) deletion (when cell in header row is deleted via "v":null or via "cls":1 functionality, the entire column is deleted, not just that one cell), (3) folding ("fold" functionality for a cell in header row will actually fold/unfold the entire column, not just that one cell), (4) defaults (setting property "df" for a cell in header row will set defaults for all cells in the entire column), and (5) potentially other properties (e.g., setting properties "tag", "ef", and "af" for a cell in header row may apply visual effects to the entire column, not just that cell)
+
+### `<<gridProp>>`
+
+- **Grammar:** `"rows":<<uint>>`
+- **Required:** Requireable
+- **Description:** minimum number of rows for current grid; any blank cells created due to this property specification will be initialized with a "bin" item
+
+### `<<gridProp>>`
+
+- **Grammar:** `"columns":<<uint>>`
+- **Shorthand:** `"cols":<<uint>>`
+- **Required:** Requireable
+- **Description:** minimum number of columns for current grid; any blank cells created due to this property specification will be initialized with a "bin" item
+
+### `<<gridProp>>`
+
+- **Grammar:** `"hexGrid":1|2`
+- **Shorthand:** `"hex":1|2`
+- **Required:** Requireable
+- **Description:** offset every other row in the grid, such that each non-peripheral cell has 6 adjacent cells (left, right, above-left, above-right, below-left, below-right) rather than 4 (left, right, above, below); "hex":1 means that even rows are pushed over half a cell-width to the right (such that leftmost cell in the top row is above and to the left of leftmost cell in the second row), and "hex":2 means that even rows are pushed over half a cell-width to the left (such that leftmost cell in top row is above and to the right of leftmost cell in the second row, and shares borders with both first and second cells in the second row)
+
+### `<<mediaProp>>`
+
+- **Grammar:** `"format":<<format>>`
+- **Shorthand:** `"fmt":<<format>>`
+- **Required:** Requireable
+- **Description:** format type for "media" components; if certain media types are required for "media" components, app software should check that UI software can handle these via the "!!require" directive (e.g. {"!!require":{"fmt":[".mp3","youtube.com",".md"]}} ensures mp3's and youtube videos can be embedded and controlled as "media" components, and that markdown syntax is supported for "doc" components)
+
+### `<<mediaProp>>`
+
+- **Grammar:** `"play":1|0`
+- **Required:** Requireable
+- **Description:** audio/video time playback; "play":0 (default) indicates media is paused, "play":1 indicates it is playing
+
+### `<<mediaProp>>`
+
+- **Grammar:** `"at":<<number>>`
+- **Required:** Requireable
+- **Description:** audio/video time position (in seconds)
+
+### `<<plotProp>>`
+
+- **Grammar:** `"axisx":{(<<axisOpt>>(,<<axisOpt>>)*)?}`
+- **Required:** Requireable
+- **Description:** x-axis label/markers; if any `<<axisOpt>>` is missing, UI software will automatically generate axis markers based on data-points
+
+### `<<plotProp>>`
+
+- **Grammar:** `"axisy":{(<<axisOpt>>(,<<axisOpt>>)*)?}`
+- **Required:** Requireable
+- **Description:** y-axis label/markers; if any `<<axisOpt>>` is missing, UI software will automatically generate axis markers based on data-points
+
+### `<<dataProp>>`
+
+- **Grammar:** `"plotType":<<plotType>>`
+- **Shorthand:** `"plt":<<plotType>>`
+- **Required:** Requireable
+- **Description:** plot type for current data series
+
+### `<<dataProp>>`
+
+- **Grammar:** `"axisx":{(<<axisOpt>>(,<<axisOpt>>)*)?}`
+- **Required:** Requireable
+- **Description:** x-axis label/markers; this property is ignored if this "data" item is a child of "plot"
+
+### `<<dataProp>>`
+
+- **Grammar:** `"axisy":{(<<axisOpt>>(,<<axisOpt>>)*)?}`
+- **Required:** Requireable
+- **Description:** y-axis label/markers; this property is ignored if this "data" item is a child of "plot"
+
+### `<<dpProp>>`
+
+- **Grammar:** `"value":<<number>>`
+- **Shorthand:** `"v":<<number>>`
+- **Required:** Requireable
+- **Description:** data-point value (height for column plots, y-value for line/xy/box/ohlc plots); for `<<plotType>>` "ohlc" this indicates closing price
+
+### `<<dpProp>>`
+
+- **Grammar:** `"x":<<number>>`
+- **Required:** Requireable
+- **Description:** data-point x-value; if this property is not specified, x-value is assumed to be this data-point's respective tic on the x-axis
+
+### `<<dpProp>>`
+
+- **Grammar:** `"errorBars":<<number>>`
+- **Shorthand:** `"err":<<number>>`
+- **Required:** Requireable
+- **Description:** error bars lengths (i.e., how far error bars extend from "v"); for `<<plotType>>` "box", "v" is the mid-point of the box (usually used to represent mean or median), and "err" is half the height of the box
+
+### `<<dpProp>>`
+
+- **Grammar:** `"errorBars":[<<number>>,<<number>>]`
+- **Shorthand:** `"err":[<<number>>,<<number>>]`
+- **Required:** Requireable
+- **Description:** error bars lengths; `<<number>>`,`<<number>>` represent top and bottom error bars lengths, respectively (i.e., how far error bars extend up and down from "v"); for `<<plotType>>` "ohlc" `<<number>>`,`<<number>>` represent how far above the closing price the high was and how far below closing the low price was, respectively; for `<<plotType>>` "box", "v" is the mid-point of the box (usually used to represent mean or median), and `<<number>>`,`<<number>>` indicate how far above the mid-point and how far below the mid-point the top and bottom edges of box are drawn, respectively (usually used to represent margins of error)
+
+### `<<dpProp>>`
+
+- **Grammar:** `"errorBars":[<<number>>,<<number>>,<<number>>,<<number>>]`
+- **Shorthand:** `"err":[<<number>>,<<number>>,<<number>>,<<number>>]`
+- **Required:** Requireable
+- **Description:** error bars lengths for `<<plotType>>` "box", turning it into a box-and-whiskers plot; "v" is the mid-point of the box (usually used to represent median), and `<<number>>`,`<<number>>`,`<<number>>`,`<<number>>` indicate how far above the mid-point the top edge of the box is drawn, how far below the mid-point the bottom edges of box is drawn, how far above mid-point the top whisker is drawn, and how far below mid-point the bottom whisker is drawn, respectively (usually used to represent upper quartile, lower quartile, maximum, and minimum, respectively); for any `<<plotType>>` other than "box", the 3rd and 4th `<<number>>`'s are ignored
+
+### `<<dpProp>>`
+
+- **Grammar:** `"affect":<<number>>`
+- **Shorthand:** `"af":<<number>>`
+- **Required:** Requireable
+- **Description:** same as `<<property>>` "af" for all other item classes, except for `<<plotType>>` "ohlc"; for `<<plotType>>` "ohlc" `<<number>>` can be any number, and this property indicates price change, and it is used to calculate/plot opening price
+
+### `<<dpProp>>`
+
+- **Grammar:** `"effect":<<number>>`
+- **Shorthand:** `"ef":<<number>>`
+- **Required:** Requireable
+- **Description:** same as `<<property>>` "ef" for all other item classes, except for `<<plotType>>` "xy"; for `<<plotType>>` "xy" `<<number>>` should always be between 0 and 1, and will be displayed as the size of the drawn point
+
+### `<<viewportProp>>`
+
+- **Grammar:** `"width":<<uint>>`
+- **Shorthand:** `"w":<<uint>>`
+- **Required:** Requireable
+- **Description:** width of viewport
+
+### `<<viewportProp>>`
+
+- **Grammar:** `"height":<<uint>>`
+- **Shorthand:** `"h":<<uint>>`
+- **Required:** Requireable
+- **Description:** height of viewport
+
+### `<<grgProp>>`
+
+- **Grammar:** `"scaleX":<<number>>`
+- **Shorthand:** `"x^":<<number>>`
+- **Required:** Requireable
+- **Description:** scale (stretch/zoom) group of items along x-axis ("x" is the origin); `<<number>>` should be higher than 0 and indicates percent of scale (i.e., "x^":100 is original scale)
+
+### `<<grgProp>>`
+
+- **Grammar:** `"scaleY":<<number>>`
+- **Shorthand:** `"y^":<<number>>`
+- **Required:** Requireable
+- **Description:** scale (stretch/zoom) group of items along y-axis ("y" is the origin); `<<number>>` should be higher than 0 and indicates percent of scale (i.e., "y^":100 is original scale)
+
+### `<<grgProp>>`
+
+- **Grammar:** `"scaleZ":<<number>>`
+- **Shorthand:** `"z^":<<number>>`
+- **Required:** Requireable
+- **Description:** scale (stretch/zoom) group of items along z-axis inside a "3d" viewport ("z" is the origin); `<<number>>` should be higher than 0 and indicates percent of scale (i.e., "z^":100 is original scale)
+
+### `<<grgProp>>`
+
+- **Grammar:** `<<2dProp>>|<<3dProp>>`
+- **Required:** Requireable
+- **Description:** translate/rotate and overlap (collision) event specifications for a group of items; `<<3dProp>>`'s apply only to items inside "3d" containers, whereas `<<2dProp>>`'s apply to items in both "2d" and "3d" containers
+
+### `<<grProp>>`
+
+- **Grammar:** `"shape":<<shape>>`
+- **Shorthand:** `"shp":<<shape>>`
+- **Required:** Requireable
+- **Description:** item shape; if no shape is specified, item shape does not matter; do not use "shp" for aesthetics, only when shape specification is functionally relevant -- use "tag" and "!style" properties for all aesthetic choice specifications
+
+### `<<grProp>>`
+
+- **Grammar:** `"width":<<number>>`
+- **Shorthand:** `"w":<<number>>`
+- **Required:** Requireable
+- **Description:** width of the item; default is 1
+
+### `<<grProp>>`
+
+- **Grammar:** `"height":<<number>>`
+- **Shorthand:** `"h":<<number>>`
+- **Required:** Requireable
+- **Description:** height of the item; default is 1
+
+### `<<grProp>>`
+
+- **Grammar:** `"depth":<<number>>`
+- **Shorthand:** `"d":<<number>>`
+- **Required:** Requireable
+- **Description:** depth of the item (only for "gr" items inside "3d" containers); default is 1
+
+### `<<grProp>>`
+
+- **Grammar:** `<<2dProp>>|<<3dProp>>`
+- **Required:** Requireable
+- **Description:** location, rotation, and overlap (collision) event specifications for a graphical item; `<<3dProp>>`'s apply only to items inside "3d" containers, whereas `<<2dProp>>`'s apply to items in both "2d" and "3d" containers
+
+### `<<grProp>>`
+
+- **Grammar:** `"opaque":1|0`
+- **Shorthand:** `"opq":1|0`
+- **Required:** Requireable
+- **Description:** set item as opaque or transparent; "opq":1 ensures this item is opaque (such that any siblings behind it are obstructed); "opq":0 ensures that this item background is transparent (though the item should still be visible in some way, e.g., item border may be visible); "opq":0 items that do not themselves capture pointer events allow pass-through of pointer events to any items behind them, whereas "opq":1 items do not ever allow pass-through of pointer events to any items behind them; if "opq" property is not set (i.e., "opq":null), this indicates to UI software that opaqueness of the item does not matter, though the item should still capture pointer events
+
+### `<<lProp>>`
+
+- **Grammar:** `"value":<<uid>>`
+- **Shorthand:** `"v":<<uid>>`
+- **Required:** Requireable
+- **Description:** link target item; this is a partial `<<uid>>` of another item within this network graph -- it specifies a unique path to another item within this item's root network graph container (root network graph container is the "ng" item that is the ancestor of this item whose parent is not also "ng")
+
+### `<<lProp>>`
+
+- **Grammar:** `"direction":(-1)|0|1`
+- **Shorthand:** `"dir":(-1)|0|1`
+- **Required:** Requireable
+- **Description:** link direction; 0 (default) is a non-directional link, 1 signifies direction from parent item to the target item (i.e., item specified as via the "v" property of this link), and -1 specifies that the direction is reversed, going from target item to this link's parent item
+
+### `<<animation>>`
+
+- **Grammar:** `"frameset":[<<qUpdate>>(,<<qUpdate>>)*]`
+- **Shorthand:** `"fs":[<<qUpdate>>(,<<qUpdate>>)*]`
+- **Required:** Requireable
+- **Description:** frames of updates for current item, each of which can be executed by manipulating "f" and "±f" `<<animation>>` properties; zero-indexed; do not use "frames" for sprite animation if its purpose is decorative, rather than functional (the rule of thumb is -- if you wouldn't put it in the API, do not put it in UINL outside of the "!style" `<<uiDirective>>`)
+
+### `<<animation>>`
+
+- **Grammar:** `"frame":<<number>>`
+- **Shorthand:** `"f":<<number>>`
+- **Required:** Requireable
+- **Description:** frame to execute; `<<number>>` indicates index of frame to execute (i.e., change item properties in accordance with the frame whose index the "frames" `<<animation>>` list is closest to `<<number>>`); if `<<number>>` does not match an existing frame index (i.e., if the number is not an integer, or it's less than 0, or it's higher than the number of existing frames), the frame whose index is closest to `<<number>>` is executed
+
+### `<<animation>>`
+
+- **Grammar:** `<<animationVelocity>>:<<number>>`
+- **Required:** Requireable
+- **Description:** animation for a numeric property; `<<number>>` indicates current velocity (rate of change per second); if the numeric property that is being animated is not set at the time animation is initiated, initial value starts at 0.0; when animation stops (whether due to reaching its target value or due to a collision), `<<animationVelocity>>` is set to the text string "`<<number>>`", where `<<number>>` is the terminal velocity
+
+### `<<animation>>`
+
+- **Grammar:** `<<animationVelocity>>:<<text>>`
+- **Required:** Requireable
+- **Description:** animation for corresponding property is stopped
+
+### `<<animation>>`
+
+- **Grammar:** `<<animationOptions>>:{<<aniOpt>>(,<<aniOpt>>)*}`
+- **Required:** Requireable
+- **Description:** animation options for a numeric property
+
+## widget type
+
+### `<<itemClass>>`
+
+- **Grammar:** `"bin"`
+- **Required:** Always
+- **Description:** container item; this item's value property "v" can only ever be `<<container>>`; if "v" property isn't specified, it is set to [] (i.e., this is the default `<<container>>` component class -- {"add":[{"id":`<<id>>`,"c":"bin"}]} is equivalent to {"add":[{"id":`<<id>>`,"v":[]}]}); even if "bin" is empty, human-facing UI software should attempt to display it in some way (e.g., as a spacer), so as to make the human-user experience as close as possible to what AI would experience
+
+### `<<itemClass>>`
+
+- **Grammar:** `"txt"`
+- **Required:** Always
+- **Description:** text item; this item's value property "v" can only ever be `<<text>>`; if "v" property isn't specified, it is set to "" (i.e., "" is the default `<<text>>` component class -- {"add":[{"id":`<<id>>`,"c":"txt"}]} is equivalent to {"add":[{"id":`<<id>>`,"v":""}]}
+
+### `<<itemClass>>`
+
+- **Grammar:** `"num"`
+- **Required:** Always
+- **Description:** numeric item; this item's value property "v" can only ever be `<<number>>`; if "v" property isn't specified, it is set to 0 (i.e., 0 is the default `<<number>>` component class -- {"add":[{"id":`<<id>>`,"c":"num"}]} is equivalent to {"add":[{"id":`<<id>>`,"v":0}]})
+
+### `<<itemClass>>`
+
+- **Grammar:** `"btn"`
+- **Required:** Always
+- **Description:** button item; this item's value property "v" can only ever be `<<boolean>>`; if "v" property isn't specified, it is set to false (i.e., false is the default `<<boolean>>` component class -- {"add":[{"id":`<<id>>`,"c":"btn"}]} is equivalent to {"add":[{"id":`<<id>>`,"v":false}]})
+
+### `<<itemClass>>`
+
+- **Grammar:** `"hold"`
+- **Required:** Requireable
+- **Description:** this item is a hold-down button -- a special `<<boolean>>` that sends `<<userProp>>` "v":true when pressed and "v":false when released
+
+### `<<itemClass>>`
+
+- **Grammar:** `"opt"`
+- **Required:** Requireable
+- **Description:** this item is a selectable option -- a special `<<boolean>>` that can be selected (setting `<<property>>` "v" to true) and deselected (setting `<<property>>` "v" to false) with alternating clicks
+
+### `<<itemClass>>`
+
+- **Grammar:** `"time"`
+- **Required:** Requireable
+- **Description:** this item is a timespan field -- a special `<<number>>` item whose value represents a number of seconds; use `<<numProp>>` "step" to control time precision (e.g., use "step":60 to exclude seconds or "step":1 to exclude milliseconds)
+
+### `<<itemClass>>`
+
+- **Grammar:** `"dt"`
+- **Required:** Requireable
+- **Description:** this item is a datetime field -- a special `<<number>>` item whose value represents number of seconds since epoch; default value for this item is current datetime (e.g., an APP->UI message {"A":[{"c":"dt"}]} received on 04/08/2021 at 07:11:23.364 PM (localtime) will be instantiated with the value 1617909083.364, thus displaying date/time 2021-04-08 07:11:23.364 PM); use `<<numProp>>` "step" to control datetime precision (e.g., use "step":60 to exclude seconds, "step":86400 to exclude time (just show the date), or "step":1 to exclude milliseconds); use `<<numProp>>` "unit" to provide context for current timestamp (e.g., timezone)
+
+### `<<itemClass>>`
+
+- **Grammar:** `"math"`
+- **Required:** Requireable
+- **Description:** this item is a mathematical value or formula -- a special `<<text>>` item that follows AsciiMath syntax (see http://asciimath.org/ for more detail); use "i" (character i in double-quotes) or UTF character ⅈ to denote imaginary number (i.e., square root of -1)
+
+### `<<itemClass>>`
+
+- **Grammar:** `"doc"`
+- **Required:** Requireable
+- **Description:** this item is an embedded document - its a special `<<text>>` item that includes markup syntax; default markup language is HTML (use "fmt" property for alternate behavior; for example "fmt":"md" signifies this doc uses markdown syntax); this should only be employed for displaying documents, not functional UI components, and with the assumption that many machine agents will ignore markup tags
+
+### `<<itemClass>>`
+
+- **Grammar:** `"file"`
+- **Required:** Requireable
+- **Description:** this item is a file chooser - its a special `<<text>>` item whose "input" property is 1 by default (i.e., interactive by default), and whose value is set after user chooses some file(s); by default file-chooser only allows choosing a single file, and after the user chooses a file from their storage device a UI->APP message {"t":`<<ums>>`,"u":`<<uid>>`,"v":`<<base64>>`} is sent, where `<<base64>>` is the base64 representation of file contents (for alternate behavior, see `<<fileProp>>` "accepts"); if `<<interactProp>>` "go":1 is used for this item, the UI->APP message with file contents is not sent until after the "go" button is clicked
+
+### `<<itemClass>>`
+
+- **Grammar:** `"rgb"`
+- **Required:** Requireable
+- **Description:** this item is a color -- a special `<<text>>` item whose value is a 6-character hexadecimal value, representing RGB color; for human users this is likely displayed as the actual color, rather than a hex string
+
+### `<<itemClass>>`
+
+- **Grammar:** `"drop"`
+- **Required:** Requireable
+- **Description:** this item is a dropdown container (usually a dropdown menu) -- a special `<<container>>` whose content is folded by default (i.e., "fold":2), and when it is unfolded (i.e., "fold":1) it is drawn hovering above other content, and is automatically folded again when this item loses focus or when one of its inputs is edited or toggled; this item cannot have "fold":0 property -- its "fold" property is always 1 or 2; every item inside a "drop" container is a button (i.e., "Class":"btn") by default (use "defaults" property for alternate behavior)
+
+### `<<itemClass>>`
+
+- **Grammar:** `"ctx"`
+- **Required:** Requireable
+- **Description:** this item is a context menu -- a special `<<container>>` that is drawn hovering above other content, and is automatically deleted from display when this item loses focus or when one of its inputs is edited or toggled; every item inside a "ctx" container is a button (i.e., "Class":"btn") by default (use "defaults" property for alternate behavior); if "ctx" item is destroyed as a result of losing focus, a UI->APP message {"t":`<<ums>>`,"u":`<<uid>>`,"v":null} is sent
+
+### `<<itemClass>>`
+
+- **Grammar:** `"win"`
+- **Required:** Requireable
+- **Description:** this item is a window/popup -- a special `<<container>>` that floats freely in its parent container (potentially obscuring view of what's behind it); "win" container position does not cause reflow of its siblings; by default "win" containers do not block interaction with other visible items on display (see "mod" `<<winProp>>` for alternate behavior); "win" container is able to receive focus (e.g. when it or one of its child items is clicked), and when it does this "win" container's stack-order index (`<<property>>` "i") is automatically increased maximally (i.e., it becomes last item in its parent container, and thus the top-most item, unobscured by other items); use `<<interactProp>>` "on":{"fcs":[]} to subscribe to "win" focus in/out events; when this container has no "mod":1 `<<winProp>>`, human-facing UI software is responsible for enabling interaction with sibling items that may be obscured by this container (this may be done by making "win" item draggable/resizable, via a keyboard shortcut or a toolbar, and/or any other method)
+
+### `<<itemClass>>`
+
+- **Grammar:** `"one"`
+- **Required:** Requireable
+- **Description:** this item is a container with one child whose content is visible and other children whose content is hidden (usually represented to humans as tabs, accordion, or a carousel) -- a special `<<container>>` whose children are all "bin" class items with `<<containerProp>>` "fold", where one child has `<<containerProp>>` "fold":1 and the rest of the children have `<<containerProp>>` "fold":2; by default the first "one" child has `<<containerProp>>` "fold":1 and the rest of the children have `<<containerProp>>` "fold":2; setting any "one" child `<<containerProp>>` "fold":1 will automatically set the rest of the children to "fold":2; user does not have the control to set "fold":2 for any "one" child (cannot hide a visible child), but can set "fold":1 (can show a specific child, thus automatically hiding other children); no UI->APP message is sent when a container in "one" is folded/unfolded (use `<<interactProp>>` "on":{"fold":[1]} to subscribe to unfold events for each child of "one")
+
+### `<<itemClass>>`
+
+- **Grammar:** `"grid"`
+- **Required:** Requireable
+- **Description:** this item is a grid/table -- a special `<<container>>` that contains only "bin" class items, each of which will be a row in the grid; grid cells cannot be "win" class; null `<<item>>` declarations in the middle of grid-row `<<container>>` array declarations do *NOT* create empty grid cells -- these are ignored (just as they would be for any "bin" class items); deleting an item from a grid-row shifts the rest of row contents left to take up the space of the deleted item; each grid-row "id" or "cap" option is used as row header; human-facing UI software may include special visualization for grid (header row/col may be frozen, while other rows/cols are scrollable; if two consecutive header cells are identical, those header cells may be merged; etc.)
+
+### `<<itemClass>>`
+
+- **Grammar:** `"<span"`
+- **Required:** Requireable
+- **Description:** this item is a grid cell merged with a cell to its left -- a special blank item inside a grid row, indicating that an item directly to its left spans rightward into this cell's space; this item has no working `<<property>>`'s
+
+### `<<itemClass>>`
+
+- **Grammar:** `"^span"`
+- **Required:** Requireable
+- **Description:** this item is a grid cell merged with a cell above it -- a special blank item inside a grid row, indicating that an item directly above it spans downward into this cell's space; this item has no working `<<property>>`'s
+
+### `<<itemClass>>`
+
+- **Grammar:** `"url"`
+- **Required:** Requireable
+- **Description:** this item is a frame displaying external resources -- an item whose value property must be "`<<url>>`", where the `<<url>>` points to a resource that will be displayed as an inline frame; `<<interactProp>>` "in":-1 disables user interactions with frame contents
+
+### `<<itemClass>>`
+
+- **Grammar:** `"media"`
+- **Required:** Requireable
+- **Description:** this item is embedded playable media (i.e., audio/video/slideshow) -- an item whose value must be "`<<url>>`", where `<<url>>` points to a media resource with playback capabilities; by default this item is interactive (subscribe to `<<event>>` "play", "at", and "av" to listen for media interaction events); `<<interactProp>>` "in":-1 disables user interactions with the specified media (i.e., app software may still start/end playback, but user-software cannot)
+
+### `<<itemClass>>`
+
+- **Grammar:** `"plot"`
+- **Required:** Requireable
+- **Description:** this item is a 2d plot/chart -- a special `<<container>>` that contains only "data" class items; there is no need to specify "c":"data" for each item inside "plot", as this is presumed by UI software; all "data" series in this container will be drawn on the same plot and will share this item's "axisx" and "axisy" properties
+
+### `<<itemClass>>`
+
+- **Grammar:** `"data"`
+- **Required:** Requireable
+- **Description:** this item is a series of data points -- a special `<<container>>` that contains only "dp" class items; there is no need to specify "c":"dp" for each item inside "data", as this is presumed by UI software
+
+### `<<itemClass>>`
+
+- **Grammar:** `"dp"`
+- **Required:** Requireable
+- **Description:** this item is a data point on a chart -- a terminating numeric item inside each "data" container; this item is ignored if used outside of "data" containers
+
+### `<<itemClass>>`
+
+- **Grammar:** `"2d"`
+- **Required:** Requireable
+- **Description:** this item is a 2d graphics viewport -- a special `<<container>>` whose children are "gr" items; there's no need to specify "c":"gr" for children of "2d" (because "gr" is the default and only component class for any child of "2d")
+
+### `<<itemClass>>`
+
+- **Grammar:** `"3d"`
+- **Required:** Requireable
+- **Description:** this item is a 3d graphics viewport -- a special `<<container>>` whose children are "gr" items; there's no need to specify "c":"gr" for children of "3d" (because "gr" is the default and only component class for any child of "3d")
+
+### `<<itemClass>>`
+
+- **Grammar:** `"grg"`
+- **Required:** Requireable
+- **Description:** this item is a group of graphical items -- a special `<<container>>` whose children are "grg" or "gr"; "grg" is not meant to be drawn on display, only its descendant "gr" and "l" items are drawn, thus all normally visualizable and interactive item properties ("cap", "ef", "af", "tag", "tip", "ctx", "ref", and `<<interactProp>>`'s) are ignored for "grg" container; there's no need to specify "c":"gr" for children of "grg" (because "gr" is the default component class for any item inside "grg"); for descendants of "2d", later "grg" containers (i.e., those with a higher index property "i") are drawn later, and are drawn on top of earlier-specified "grg" containers (i.e., those with a lower index property "i"); items inside "grg" should use coordinates relative to the "x"/"y" of this "grg" item; "x"/"y" properties of "grg" indicate the translation of this group, as well as the origin point for rotation and scaling
+
+### `<<itemClass>>`
+
+- **Grammar:** `"gr"`
+- **Required:** Requireable
+- **Description:** this a graphical node inside a 2d or 3d container -- a special `<<container>>` that contains only "l" items (i.e., links); this item must be a child of "2d" or "3d" or "grg" container; each child of "gr" is a link to another "gr" item within this "2d" or "3d" container; there is no need to specify "c":"l" for children of "gr" (because "l" is the default and only class type allowed inside the "gr" container); use `<<property>>` "tag" to provide visual styling for "gr" items (e.g., background color, sprite images); for descendants of "2d", later "gr" items are drawn later, and are thus shown in front of earlier-specified "gr" items within the same "grg"
+
+### `<<itemClass>>`
+
+- **Grammar:** `"l"`
+- **Required:** Requireable
+- **Description:** this item is a line/link in a "2d" or "3d" graphical container -- a terminating item inside a "gr" container; the value property of "l" items is a partial `<<uid>>` of another item within this "2d" or "3d" graph -- it specifies a unique path to another item within this item's root "2d" or "3d" graph container; if this item has no value, it links to its parent "gr" item's next sibling, if one exists (i.e., APP->UI message {"A":[{"c":"2d","w":50,"h":50,"df":{"v":[{}]},"v":[{"x":10,"y":10},{"x":25,"y":40},{"x":40,"y":10}]}]} will draw a V shape with vertices at (10,10), (25,40), and (40,10))
+
+## details
+
+### `<<container>>`
+
+- **Grammar:** `[(<<item>>(,<<item>>)*)?]`
+- **Required:** Always
+- **Description:** array of item declarations for current container
+
+### `<<item>>`
+
+- **Grammar:** `<<value>>|<<container>>|<<pList>>`
+- **Required:** Always
+- **Description:** an `<<item>>` may be declared by value (`<<value>>` or `<<container>>`) or a list of properties (`<<pList>>`) (i.e., {"v":["hello","world"]} is shorthand for {"v":[{"v":"hello"},{"v":"world"}]})
+
+### `<<pList>>`
+
+- **Grammar:** `{<<itemProp>>(,<<itemProp>>)*}`
+- **Required:** Always
+- **Description:** list of item properties and commands
+
+### `<<qUpdate>>`
+
+- **Grammar:** `<<pList>>`
+- **Required:** Always
+- **Description:** list of properties and commands to execute
+
+### `<<uid>>`
+
+- **Grammar:** `<<id>>|<<index>>|<<ids>>`
+- **Required:** Always
+- **Description:** unique item `<<id>>`|`<<index>>`, or a unique array of breadcrumbs to find an item among current container's descendants
+
+### `<<id>>`
+
+- **Grammar:** `<<text>>`
+- **Required:** Always
+- **Description:** unique item key; `<<id>>` of root container is null, and cannot be changed; `<<id>>` text is displayed as item caption/title text (unless the "caption" optional property is specified, see below)
+
+### `<<index>>`
+
+- **Grammar:** `<<number>>`
+- **Required:** Always
+- **Description:** item index (i.e., order number within the current container); `<<number>>` must be an integer; item numbering in a container begins at 0; if `<<number>>` is less than 0, it indicates that item count begins at last item (i.e., `<<index>>` -1 is the last item in current container, `<<index>>` -2 is the next-to-last item, etc.)
+
+### `<<ids>>`
+
+- **Grammar:** `[<<id>>|<<index>>(,<<id>>|<<index>>)*]`
+- **Required:** Always
+- **Description:** a sequence of id's to search; a search by `<<ids>>` is equivalent to multiple nested searches for `<<id>>`|`<<index>>` (i.e., {"U":["A","B","C"],...} = {"U":"A","Q":[{"U":["B","C"],...}]} = {"U":"A","Q":[{"U":"B","Q":[{"U:"C",...}]}]})
+
+### `<<value>>`
+
+- **Grammar:** `<<text>>|<<number>>|<<boolean>>`
+- **Required:** Always
+- **Description:** item value may be text, number, boolean (booleans signify buttons/options)
+
+### `<<value>>`
+
+- **Grammar:** `null`
+- **Required:** Always
+- **Description:** setting item value to null will delete the corresponding item and remove it from display
+
+### `<<boolean>>`
+
+- **Grammar:** `(true)|(false)`
+- **Required:** Always
+- **Description:** true or false boolean value
+
+### `<<text>>`
+
+- **Grammar:** `*** see JSON string specification at json.org ***`
+- **Required:** Always
+- **Description:** text string
+
+### `<<number>>`
+
+- **Grammar:** `*** see JSON number specification at json.org ***`
+- **Required:** Always
+- **Description:** numeric value
+
+### `<<uint>>`
+
+- **Grammar:** `((1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*)|0`
+- **Required:** Always
+- **Description:** positive integer, or zero
+
+### `<<settings>>`
+
+- **Grammar:** `*** see JSON object specification at json.org ***`
+- **Required:** Always
+- **Description:** key-value pairs describing non-native UI component settings
+
+### `<<ums>>`
+
+- **Grammar:** `<<uint>>`
+- **Required:** Always
+- **Description:** time in milliseconds since the handshake message was sent by user-agent software (`<<ums>>` is 0 at the time when the handshake message is sent)
+
+### `<<idPath>>`
+
+- **Grammar:** `[<<id>>|<<index>>(,<<id>>|<<index>>)*]`
+- **Required:** Always
+- **Description:** hierarchical partial path to item; the last (right-most) `<<id>>`|`<<index>>` in `<<idPath>>` refers to the actual item where user-event has occurred, with each preceding `<<id>>`|`<<index>>` referring to item's parent, its parent's parent, etc.; when forming `<<idPath>>`, `<<id>>` should be used instead of `<<index>>` for any item that has an "id" property, and `<<index>>` should be used for any item that has no "id" property; `<<index>>` returned via `<<idPath>>` is always `<<uint>>`, never a negative number; `<<idPath>>` only needs to include enough parent id's so as to provide a unique path to item (i.e., if any `<<id>>` in `<<idPath>>` is unique in display, its parents do not need to be included)
+
+### `<<required>>`
+
+- **Grammar:** `<<propName>>:<<values>>`
+- **Required:** Requireable
+- **Description:** specify properties/commands (and property values) necessary for this application; for any `<<propName>>` where its value can be an array or associative array (e.g. "R", "on"), `<<values>>` specifies which names are allowed in said array, (e.g. {"!!require":{"on":["k","pc"]}} signifies that UI software must be able to capture/process key-down and click events)
+
+### `<<required>>`
+
+- **Grammar:** `"!async":[]`
+- **Shorthand:** `"&":[]`
+- **Required:** Requireable
+- **Description:** declare that app is asynchronous; if application software never sends the `<<uiDirective>>` "!!require"{..."!async":[]...} or "!!require"{..."&":[]...}, user-agent software will assume that message protocol is synchronous, such that each UI->APP message will be treated as a request by the application, and will be followed immediately by one, and only one, APP->UI response message
+
+### `<<required>>`
+
+- **Grammar:** `"of":[(<<overlapFunction>>(,<<overlapFunction>>)*)?]`
+- **Required:** Requireable
+- **Description:** specify which overlap functions are required for this application
+
+### `<<propName>>`
+
+- **Grammar:** `*** property name: the part to the left of the colon in the <<property>> or <<Command>> expression (e.g. "cap", "Td", "x") ***`
+- **Required:** Requireable
+
+### `<<userPropName>>`
+
+- **Grammar:** `*** userProp name: the part to the left of the colon in the <<userProp>> expression (e.g. "v", "pc", "error") ***`
+- **Required:** Requireable
+
+### `<<values>>`
+
+- **Grammar:** `[(<<value>>(,<<value>>)*)?]`
+- **Required:** Requireable
+
+### `<<property>>`
+
+- **Grammar:** `<<propName>>:null`
+- **Required:** Requireable
+- **Description:** remove/reset property (i.e. clear or reset property to default behavior); this doesn't hold for properties "c" and "v" ("v":null will delete current item, "c":null does nothing)
+
+### `<<property>>`
+
+- **Grammar:** `<<propName>>:{.*}`
+- **Required:** Requireable
+- **Description:** partially update property; only for `<<property>>`'s whose values are mapped arrays (e.g., "on", "throt", "df", "axisx", "axisy", "ª`<<propName>>`") and for `<<uiDirective>>`'s "tem" and "task" (not for `<<uiDirective>>` "!!require" -- once a feature is required, it cannot be un-required)
+
+### `<<template>>`
+
+- **Grammar:** `<<templateName>:<<pList>>`
+- **Required:** Requireable
+- **Description:** `<<pList>>` is a list of properties/commands to be executed whenever this template is employed; APP software should avoid naming templates with a reserved property or command name
+
+### `<<templateName>>`
+
+- **Grammar:** `<<text>>`
+- **Required:** Requireable
+- **Description:** unique name for a template
+
+### `<<qUpdate>>`
+
+- **Grammar:** `<<templateName>>`
+- **Required:** Requireable
+- **Description:** template name, referring to an existing `<<template>>`; use {"!!require":{..."!templates":[]...}} to ensure that UI software can handle such `<<qUpdate>>`'s
+
+### `<<userPropTrigger>>`
+
+- **Grammar:** `<<userProp>>`
+- **Required:** Requireable
+- **Description:** exact match trigger for current update; current update/declaration is triggered whenever UI->APP message matches the specified `<<userProp>>`'s
+
+### `<<userPropTrigger>>`
+
+- **Grammar:** `<<userPropName>>:{}`
+- **Required:** Requireable
+- **Description:** wildcard trigger for current update; current update/declaration is triggered whenever UI->APP message includes `<<userPropName>>`, regardless of its corresponding value
+
+### `<<url>>`
+
+- **Grammar:** `*** legal url ***`
+- **Required:** Requireable
+
+### `<<req>>`
+
+- **Grammar:** `<<propName>>`
+- **Required:** Requireable
+- **Description:** request property value for current item
+
+### `<<req>>`
+
+- **Grammar:** `"(xy)|(wh)|(whc)"`
+- **Required:** Requireable
+- **Description:** request calculated location (xy), size of viewport (wh), and size of content (whc)
+
+### `<<reqInfo>>`
+
+- **Grammar:** `<<property>>|<<calcProp>>`
+- **Required:** Requireable
+- **Description:** item property value
+
+### `<<calcProp>>`
+
+- **Grammar:** `"xy":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** calculated distance of item's top-left corner from its parent's top-left corner
+
+### `<<calcProp>>`
+
+- **Grammar:** `"wh":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** calculated item size
+
+### `<<calcProp>>`
+
+- **Grammar:** `"whc":[<<xy>>]`
+- **Required:** Requireable
+- **Description:** calculated size of item content
+
+### `<<xy>>`
+
+- **Grammar:** `<<number>>,<<number>>`
+- **Required:** Requireable
+- **Description:** location or size; `<<number>>`,`<<number>>` represent location/size on horizontal and vertical axes, respectively
+
+### `<<matchByVal>>`
+
+- **Grammar:** `<<propName>>:<<value>>`
+- **Required:** Requireable
+- **Description:** match property
+
+### `<<matchByVal>>`
+
+- **Grammar:** `<<propName>>:<<values>>`
+- **Required:** Requireable
+- **Description:** match property array values or associative array keys; all specified `<<value>>`'s must be found in item property array or associative array for property to match
+
+### `<<value>>`
+
+- **Grammar:** `{}`
+- **Required:** Requireable
+- **Description:** wildcard non-null value; only for `<<Command>>`'s "U*":, "U**", "Tr", and `<<uiDirective>>` "task" -- use {} instead of `<<value>>` to match any non-null value in `<<matchByVal>>` and `<<userProp>>`
+
+### `<<tag>>`
+
+- **Grammar:** `<<text>>`
+- **Required:** Requireable
+- **Description:** custom tags; visually-distinct styles for each such `<<tag>>` *must* be provided via the "!style" `<<uiDirective>>` for human-facing UI software
+
+### `<<captionText>>`
+
+- **Grammar:** `<<text>>`
+- **Required:** Requireable
+- **Description:** caption text is standard `<<text>>` with one exception -- it may include inline images (icons) indicated via the following escape sequence: ![`<<altTxt>>`](`<<url>>`), where `<<altTxt>>` is optional text to display if the `<<url>>` resource is not loading (if no `<<altTxt>>` is specified and there is an error loading the image, nothing is shown)
+
+### `<<contextMenu>>`
+
+- **Grammar:** `<<container>>|<<pList>>`
+- **Required:** Requireable
+- **Description:** container item that would appear at location of context action hovering above other content; this container's Class will always be "ctx"
+
+### `<<event>>`
+
+- **Grammar:** `*** name of event: the part to the left of the colon in the <<eventInfo>> expression (e.g. "k", "pc", "copy") ***`
+- **Required:** Requireable
+
+### `<<padInfo>>`
+
+- **Grammar:** `<<number>>`
+- **Required:** Requireable
+- **Description:** gamepad button/axis id and current state; the whole part of `<<number>>` represents button/axis identifier (zero-indexed), and the fractional part of the number its state; for buttons: when fractional part is zero, the button is up, and when it is non-zero, then the button is down (e.g., if first two gamepad controls are buttons, then UI->APP message {"t":`<<ums>>`,"g":[0.1,1]} means that first button was pressed and the second was released); for axes: the fractional part relays axis state, where .1 is lowest value, .5 is midpoint, and .9 is the highest possible value (e.g., gamepad controls 2 and 3 are horizontal and vertical axes of a thumbstick, then UI->APP message {"t":`<<ums>>`,"g":[2.1,3.5]} means that the thumbstick is pointing left); when gamepad is connected and "g" event is subscribed to, UI->APP message with initial gamepad state is sent (e.g., if gamepad has four buttons and two thumbsticks, when it's connected and APP->UI message {"on":{"g":[]}} is sent, the ensuing UI->APP message would be {"t":`<<ums>>`,"g":[0,1,2,3,4.5,5.5,6.5,7.5]})
+
+### `<<key>>`
+
+- **Grammar:** `*** key values as specified by w3c; e.g., "ArrowLeft", " ", "q", "Q", "Escape"; see https://www.w3.org/TR/uievents-key/ for a list of legal key values ***`
+- **Required:** Requireable
+
+### `<<keyCode>>`
+
+- **Grammar:** `*** key codes as specified by w3c; e.g., "ArrowLeft", "Space", "KeyQ", "ControlLeft"; see https://www.w3.org/TR/uievents-code/ for a list of legal key codes ***`
+- **Required:** Requireable
+
+### `<<prec>>`
+
+- **Grammar:** `null`
+- **Required:** Requireable
+- **Description:** remove event listener
+
+### `<<prec>>`
+
+- **Grammar:** `[]`
+- **Required:** Requireable
+- **Description:** capture all event values
+
+### `<<prec>>`
+
+- **Grammar:** `<<values>>`
+- **Required:** Requireable
+- **Description:** precise value specification for discrete-value events (e.g., "v", "k", "md", "mu", "fold", "fcs", "po", "cut", "copy", "paste"); events are only captured/sent when event value is specified in `<<values>>`; for "md" and "mu" events, the `<<values>>` should be `<<uint>>`'s representing mouse buttons, not the `<<xy>>` mouse locations
+
+### `<<prec>>`
+
+- **Grammar:** `[<<number>>]`
+- **Required:** Requireable
+- **Description:** precision specification for continuous-value events (e.g., "sx", "sy", "at", and "pp"); all event values are rounded to nearest `<<number>>` before sending; consecutive repeat event values for continuous events are not sent
+
+### `<<prec>>`
+
+- **Grammar:** `[<<number>>]`
+- **Required:** Requireable
+- **Description:** precision specification for gamepad axes for events "g", "g2", "g3", "g4"; default precision for gamepad axes is 0.1; gamepad event values are rounded to nearest `<<number>>` before being sent; consecutive repeat gamepad event values are not sent
+
+### `<<prec>>`
+
+- **Grammar:** `[<<xy>>]`
+- **Required:** Requireable
+- **Description:** precision specification for horizontal and vertical axes for all pointer and `<<calcProp>>` events (e.g., "p", "pd", "pu", "pc", "p2", "p3", "p4", "xy", "wh", "whc"); all locations are rounded to the nearest `<<xy>>` before being sent; consecutive repeat `<<xy>>` event values are not sent
+
+### `<<hashType>>`
+
+- **Grammar:** `*** lowercase name of a hashing algorithm, no dashes; e.g. "md5", "sha256", "bcrypt"; use "!!require" directive to make sure UI software supports this hash type, e.g., {"!!require":{"hash":["sha512"]}} ***`
+- **Required:** Requireable
+
+### `<<encryption>>`
+
+- **Grammar:** `*** lowercase name of encryption algorithm, no dashes; e.g. "rsaoaep", "aes128ctr"; use "!!require" directive to make sure UI software supports this hash type, e.g., {"!!require":{"enc":["aes128ctr"]}} ***`
+- **Required:** Requireable
+
+### `<<keyShortcut>>`
+
+- **Grammar:** `"(meta )?(ctrl )?(alt )?(shift )?<<keyCode>>"`
+- **Required:** Requireable
+- **Description:** keyboard shortcut specification; if `<<keyCode>>` is not a modifier key, it may be preceded by ordered modifier key specification: "meta " (Windows logo or Apple Command key), "ctrl " (Control key), "alt " (Alt key), and/or "shift" (Shift key); e.g., `<<keyShortcut>>`'s "KeyA", "shift KeyA", "ctrl KeyA", and "ctrl shift KeyA" would activate when user presses keys A, shift+A, ctrl+A, and ctrl+shift+A, respectively
+
+### `<<format>>`
+
+- **Grammar:** `*** a string containing a file type extension, or a hostname of embeddable media service; e.g., ".md" (markdown format), "youtube.com" (youtube video), ".mp3" (mp3 file) ***`
+- **Required:** Requireable
+
+### `<<fileTypes>>`
+
+- **Grammar:** `*** a string containing comma-separated list of one or more file type extensions; e.g., ".jpg,.jpeg,.png" ***`
+- **Required:** Requireable
+
+### `<<plotType>>`
+
+- **Grammar:** `"col"`
+- **Required:** Requireable
+- **Description:** this data series is displayed as a column chart; this plot-type is default; values for each data point in this series are column heights
+
+### `<<plotType>>`
+
+- **Grammar:** `"line"`
+- **Required:** Requireable
+- **Description:** this data series is displayed as a line chart; values for each data point in this series are y-values
+
+### `<<plotType>>`
+
+- **Grammar:** `"xy"`
+- **Required:** Requireable
+- **Description:** this data series is displayed as a XY (scatter) chart; values for each data point in this series are y-values
+
+### `<<plotType>>`
+
+- **Grammar:** `"box"`
+- **Required:** Requireable
+- **Description:** this data series is displayed as a box chart; value property "v" for each data point in this series is the mid-point of the box; "err" property is required to indicate height of the box; use "err":`<<number>>` to draw box edges equidistantly from mid-point, "err":[`<<number>>`,`<<number>>`] to indicate how far from the mid-point the top and bottom edges of the box are drawn, respectively, and [`<<number>>`,`<<number>>`,`<<number>>`,`<<number>>`] to draw box-and-whiskers
+
+### `<<plotType>>`
+
+- **Grammar:** `"ohlc"`
+- **Required:** Requireable
+- **Description:** this data series is displayed as an OHLC chart; value property "v" for each data point in this series is a y-value for closing price; use `<<dpProp>>` "af" to indicate the difference between opening and closing prices (open = v - af); "err" property for each data point in this series should be in the "err":[`<<number>>`,`<<number>>`] format, where `<<number>>`,`<<number>>` represent how far above the closing price the high was and how far below closing the low price was, respectively
+
+### `<<axisOpt>>`
+
+- **Grammar:** `"caption":<<text>>`
+- **Shorthand:** `"cap":<<text>>`
+- **Required:** Requireable
+- **Description:** axis caption/title
+
+### `<<axisOpt>>`
+
+- **Grammar:** `<<numProp>>`
+- **Required:** Requireable
+- **Description:** axis options for numeric marker values; if `<<axisOpt>>` "v" is not set, `<<numOptions>>` "min", "max", and "step" will be used to create axis markers; `<<numProp>>` "unit" may be used to format how marker values are displayed, or may be displayed as part of axis title
+
+### `<<axisOpt>>`
+
+- **Grammar:** `"Class":"dt"`
+- **Shorthand:** `"c":"dt"`
+- **Required:** Requireable
+- **Description:** axis markers are of type datetime; if `<<axisOpt>>` "v" is not supplied, or if it includes numbers, those numeric values are treated as times
+
+### `<<axisOpt>>`
+
+- **Grammar:** `"Class":"time"`
+- **Shorthand:** `"c":"time"`
+- **Required:** Requireable
+- **Description:** axis markers are of type time; if `<<axisOpt>>` "v" is not supplied, or if it includes numbers, those numeric values are treated as datetimes
+
+### `<<axisOpt>>`
+
+- **Grammar:** `"value":[<<text>>(,<<text>>)*]`
+- **Shorthand:** `"v":[<<text>>(,<<text>>)*]`
+- **Required:** Requireable
+- **Description:** axis marker text legends; if this `<<axisOpt>>` is used, all `<<numProp>>` `<<axisOpt>>` are ignored; values are 1-indexed, and incremented by 1.0, such that the first `<<text>>` corresponds to 1.0 and the next `<<text>>` corresponds to 2.0 on this axis
+
+### `<<shape>>`
+
+- **Grammar:** `"b"`
+- **Required:** Requireable
+- **Description:** 2d box (i.e., rectangle); use this shape with height of 1 (this is default height) to create a horizontal line or with a width of 1 (this is default width) to create a vertical line
+
+### `<<shape>>`
+
+- **Grammar:** `"e"`
+- **Required:** Requireable
+- **Description:** 2d ellipsoid (i.e., circle or stretched circle)
+
+### `<<shape>>`
+
+- **Grammar:** `"s <<number>>( <<number>>)?"`
+- **Required:** Requireable
+- **Description:** 2d slice (i.e., pie slice, circular sector); the 2 `<<number>>`'s define the arc size and starting angle of the slice, respectively -- where angle of 0 is left, the arc is drawn clockwise, and both numbers are specified in degrees; default value for starting angle is 0, thus `<<shape>>` "s 180" would be equivalent to `<<shape>>` "s 180 0", which is the top half of a circle; when the first `<<number>>` is >=360, this shape is a full ellipse (i.e., `<<shape>>` "s 360" is equivalent to `<<shape>>` "e"); the center of current item (i.e., specified via properties "x"/"y") is the center of the ellipsoid from which the arc is cut, the height (property "h") is the vertical diameter, and the width (property "w") is the horizontal diameter
+
+### `<<shape>>`
+
+- **Grammar:** `"t <<number>>"`
+- **Required:** Requireable
+- **Description:** 2d triangle shape with a flat bottom stretching the width of this item, and a vertex at the top, where `<<number>>` indicates percentage of width that the vertex is offset from the left edge
+
+### `<<shape>>`
+
+- **Grammar:** `"u <<number>>"`
+- **Required:** Requireable
+- **Description:** 2d stadium shape (a.k.a., pill); `<<number>>` must be between 10 and 40, and specifies the percentage of height where the circular part of the stadium starts at the top and bottom of shape
+
+### `<<shape>>`
+
+- **Grammar:** `"p <<side>> <<side>> <<side>> <<side>>"`
+- **Required:** Requireable
+- **Description:** 2d custom polygon; the 4 `<<side>>`'s define sides along top, right, bottom, and left edges, respectively, with each `<<side>>` connecting to next `<<side>>` via a straight diagonal (see `<<side>>` description for more detail)
+
+### `<<shape>>`
+
+- **Grammar:** `"B"`
+- **Required:** Requireable
+- **Description:** 3d box
+
+### `<<shape>>`
+
+- **Grammar:** `"E"`
+- **Required:** Requireable
+- **Description:** 3d ellipsoid (i.e., sphere or stretched sphere)
+
+### `<<shape>>`
+
+- **Grammar:** `"S <<number>>( <<number>>)?"`
+- **Required:** Requireable
+- **Description:** 3d slice of a cylinder (i.e., 3d pie slice, cylindrical sector); this cylindrical shape is always placed with the circular face facing the user (i.e., parallel to viewport) and the shaft of the cylinder stretching along the z-axis; the 2 `<<number>>`'s define the arc size and starting angle of the slice, respectively -- where angle of 0 is left, the arc is drawn clockwise, and both numbers are specified in degrees; default value for starting angle is 0, thus `<<shape>>` "S 180" would be equivalent to `<<shape>>` "S 180 0", which is the top half of a 3-dimensional pie slice; when the first `<<number>>` is >=360, this shape is a full cylinder
+
+### `<<shape>>`
+
+- **Grammar:** `"T <<number>>"`
+- **Required:** Requireable
+- **Description:** 3d triangular prism (i.e., wedge); this shape is a 3d version of `<<shape>>` "t `<<number>>`", and functions in the same way, except with depth
+
+### `<<shape>>`
+
+- **Grammar:** `"U <<number>>"`
+- **Required:** Requireable
+- **Description:** 3d capsule (a.k.a., pill); `<<number>>` must be between 10 and 40, and specifies the percentage of height where the spherical part of the capsule starts at the top and bottom of shape
+
+### `<<shape>>`
+
+- **Grammar:** `"P <<side>> <<side>> <<side>> <<side>>"`
+- **Required:** Requireable
+- **Description:** 3d custom prism; this shape is the same as the polygon ("p `<<side>>` `<<side>>` `<<side>>` `<<side>>`") `<<shape>>` in 2d, but with depth (i.e., for similarly specified polygon `<<shape>>` with 8 vertices in 2d, a corresponding 3d prism shape would have has 16 vertices, with 8 vertices in front making a 2d polygon, and 8 more being directly behind the first 8); the 4 `<<side>>`'s define sides along top, right, bottom, and left edges, respectively, with each `<<side>>` connecting to next `<<side>>` via a straight diagonal (see `<<side>>` description for more detail)
+
+### `<<2dProp>>`
+
+- **Grammar:** `"x":<<number>>`
+- **Required:** Requireable
+- **Description:** horizontal position of item's center point relative to its parent's "x" coordinate (or relative to the top-left corner if the parent is a "2d" or "3d" viewport); default is 0
+
+### `<<2dProp>>`
+
+- **Grammar:** `"y":<<number>>`
+- **Required:** Requireable
+- **Description:** vertical position of item's center point relative to its parent's "y" coordinate (or relative to the top-left corner if the parent is a "2d" or "3d" viewport); default is 0
+
+### `<<2dProp>>`
+
+- **Grammar:** `"rotation":<<number>>`
+- **Shorthand:** `"rot":<<number>>`
+- **Required:** Requireable
+- **Description:** rotation of the item (in degrees, clockwise); rotation is always done around item center point, specified by "x"/"y" properties
+
+### `<<2dProp>>`
+
+- **Grammar:** `"overlap":{(<<ovrOpt>>(,<<ovrOpt>>)*)?}`
+- **Shorthand:** `"ovr":{(<<ovrOpt>>(,<<ovrOpt>>)*)?}`
+- **Required:** Requireable
+- **Description:** overlap (collision) events options; use this option for detecting overlap between "gr" items or "grg" groups of items (does not detect overlap with "l" items); overlap is only checked for items that are currently moving due to animation; whichever rotation/scaling properties are implemented, those must be considered when calculating overlap (i.e., if a "gr" item is rotated and/or scaled, then overlap detection cannot be a simple bounding-box inclusion based on original "x"/"y"/"w"/"h" properties of the item, it has to be based on post-transform item size and location)
+
+### `<<3dProp>>`
+
+- **Grammar:** `"z":<<number>>`
+- **Required:** Requireable
+- **Description:** position of item's center point on the z-axis relative to its parent's "z" coordinate, with larger values being farther from the user and lower values being closer to the user; default is 0
+
+### `<<3dProp>>`
+
+- **Grammar:** `"rotationX":<<number>>`
+- **Shorthand:** `"rx":<<number>>`
+- **Required:** Requireable
+- **Description:** rotation around x-axis (pitch) in 3d context; rotation is always done around item center point, specified by "x"/"y"/"z" properties
+
+### `<<3dProp>>`
+
+- **Grammar:** `"rotationY":<<number>>`
+- **Shorthand:** `"ry":<<number>>`
+- **Required:** Requireable
+- **Description:** rotation around y-axis (yaw) in 3d context; rotation is always done around item center point, specified by "x"/"y"/"z" properties
+
+### `<<ovrOpt>>`
+
+- **Grammar:** `"of":<<overlapFunction>>`
+- **Required:** Requireable
+- **Description:** overlap function; specifies shape for calculating collisions (e.g., bounding box, radius, or rotated polygon based collisions); if this `<<ovrOpt>>` is not specified (i.e., `<<overlapFunction>>` is null), current item shape (i.e., "shp" `<<grProp>>`) is the `<<overlapFunction>>`; if neither this `<<ovrOpt>>` nor "shp" `<<grProp>>` are specified, `<<overlapFunction>>` defaults to "bb" (bounding box)
+
+### `<<ovrOpt>>`
+
+- **Grammar:** `"brb":1`
+- **Required:** Requireable
+- **Description:** bounce/rollback option; if this option is enabled, this item is prevented from overlapping any item that also has `<<ovrOpt>>` "brb":1 by rolling back 1 animation frame whenever overlap is detected and stopping all 2d/3d animation of the two overlapping items (i.e., animation is stopped for `<<propName>>`'s x, y, z, w, h, d, x^, y^, z^, rot, rx, ry for both overlapping items); WARNING: only current item animation is stopped, not the parent "grg" item animations; the bounce/rollback event, "b", is triggered whenever two items with "brb":1 flag collide and at least one of the two is subscribed to the "b" event with the other, whereas overlap-start, "o", and overlap-end event, "e", can never be triggered between two items with "brb":1
+
+### `<<ovrOpt>>`
+
+- **Grammar:** `"b":[(<<tag>>(,<<tag>>)*)?]`
+- **Required:** Requireable
+- **Description:** subscribe to bounce/rollback events; UI->APP message will be sent with "b" `<<userProp>>` whenever current item begins to overlap with any other item in current viewport that has one of the `<<tag>>`'s specified in its "tag" `<<property>>`; if no tags are specified (i.e., "b":[]), this event will trigger for all items in current viewport; when two items collide, only one UI->APP message is sent, not two
+
+### `<<ovrOpt>>`
+
+- **Grammar:** `"o":[(<<tag>>(,<<tag>>)*)?]`
+- **Required:** Requireable
+- **Description:** subscribe to overlap-start events; UI->APP message will be sent with "o" `<<userProp>>` whenever current item begins to overlap with any other item in current viewport that has one of the `<<tag>>`'s specified in its "tag" `<<property>>`; if no tags are specified (i.e., "b":[]), this event will trigger for all items in current viewport; when two items collide, only one UI->APP message is sent, not two
+
+### `<<ovrOpt>>`
+
+- **Grammar:** `"e":[(<<tag>>(,<<tag>>)*)?]`
+- **Required:** Requireable
+- **Description:** subscribe to overlap-end events; UI->APP message will be sent with "e" `<<userProp>>` whenever current item no longer overlaps with another item in current viewport that has one of the `<<tag>>`'s specified in its "tag" `<<property>>`; if no tags are specified (i.e., "b":[]), this event will trigger for all items in current viewport; when collision between two items ends, only one UI->APP message is sent, not two
+
+### `<<ovrOpt>>`
+
+- **Grammar:** `"request":[<<req>>(,<<req>>)*]`
+- **Shorthand:** `"r":[<<req>>(,<<req>>)*]`
+- **Required:** Requireable
+- **Description:** info about current item to send to app alongside "o" or "e" or "b" `<<userProp>>` upon overlap/collision; the requested info will be sent back via <userProp>> "r":{`<<reqInfo>>`(,`<<reqInfo>>`)*}
+
+### `<<ovrOpt>>`
+
+- **Grammar:** `"request2":[<<req>>(,<<req>>)*]`
+- **Shorthand:** `"r2":[<<req>>(,<<req>>)*]`
+- **Required:** Requireable
+- **Description:** info about the other item involved in collision to send to app alongside "o" or "e" or "b" `<<userProp>>` upon overlap/collision, if that item is static (i.e., not animating/moving); if "r2+" `<<ovrOpt>>` is not specified, info specified here is also sent for non-static collision targets; the requested info will be sent back via <userProp>> "r2":{`<<reqInfo>>`(,`<<reqInfo>>`)*}
+
+### `<<ovrOpt>>`
+
+- **Grammar:** `"r2\+":[<<req>>(,<<req>>)*]`
+- **Required:** Requireable
+- **Description:** info about the other item involved in collision to send to app alongside "o" or "e" or "b" `<<userProp>>` upon overlap/collision, if that other item is not static (i.e., animating/moving); default value for this `<<ovrOpt>>` is whatever the value is for "r" `<<ovrOpt>>`; the requested info will be sent back via <userProp>> "r2":{`<<reqInfo>>`(,`<<reqInfo>>`)*}
+
+### `<<overlapFunction>>`
+
+- **Grammar:** `<<shape>>`
+- **Required:** Requireable
+- **Description:** custom collision shape; e.g., an item whose shape is elliptical (i.e., "shp":"e") can still have `<<overlapFunction>>` "b" so that its overlap events are triggered based on rotated rectangle collision calculations
+
+### `<<overlapFunction>>`
+
+- **Grammar:** `"bb"`
+- **Required:** Requireable
+- **Description:** 2d bounding box (i.e., the smallest possible box that contains current shape, whose edges are all parallel to the viewport axes)
+
+### `<<overlapFunction>>`
+
+- **Grammar:** `"r"`
+- **Required:** Requireable
+- **Description:** 2d radius-based overlap, where radius is equivalent to the radius of a circle that would contain the entire bounding box of current item (i.e., r=sqrt(w^2+h^2)/2; e.g., for an unrotated rectangle with width of 3 and height of 4, the size of the max diagonal would be 5, and thus the radius would be 2.5)
+
+### `<<overlapFunction>>`
+
+- **Grammar:** `"rw"`
+- **Required:** Requireable
+- **Description:** 2d radius-based overlap, where radius is equivalent to half of item's width (or scaled width, if item is scaled)
+
+### `<<overlapFunction>>`
+
+- **Grammar:** `"rh"`
+- **Required:** Requireable
+- **Description:** 2d radius-based overlap, where radius is equivalent to half of item's height (or scaled height, if item is scaled)
+
+### `<<overlapFunction>>`
+
+- **Grammar:** `"BB"`
+- **Required:** Requireable
+- **Description:** 3d bounding box (i.e., the smallest possible box that contains current shape, whose edges are all parallel to the viewport axes)
+
+### `<<overlapFunction>>`
+
+- **Grammar:** `"R"`
+- **Required:** Requireable
+- **Description:** 3d radius-based overlap, where radius is equivalent to the radius of a sphere that would contain the entire bounding box of current item (i.e., r=sqrt(w^2+h^2+d^2)/2; e.g., for an unrotated box with width of 3 and height of 4 and depth of 5, the size of the diagonal would be sqrt(50), and thus the radius would be 3.536)
+
+### `<<overlapFunction>>`
+
+- **Grammar:** `"RW"`
+- **Required:** Requireable
+- **Description:** 3d radius-based overlap, where radius is equivalent to half of item's width (or scaled width, if item is scaled)
+
+### `<<overlapFunction>>`
+
+- **Grammar:** `"RH"`
+- **Required:** Requireable
+- **Description:** 3d radius-based overlap, where radius is equivalent to half of item's height (or scaled height, if item is scaled)
+
+### `<<overlapFunction>>`
+
+- **Grammar:** `"RD"`
+- **Required:** Requireable
+- **Description:** 3d radius-based overlap, where radius is equivalent to half of item's depth (or scaled depth, if item is scaled)
+
+### `<<animationVelocity>>`
+
+- **Grammar:** `"±(frame)|(value)|(scrollX)|(scrollY)"`
+- **Shorthand:** `"+f|v|(sx)|(sy)"`
+- **Required:** Requireable
+- **Description:** animation velocity for generic item properties; `<<property>>` "value" can only be animated when it is `<<number>>` (i.e., `<<itemClass>>` is "num" or "dt" or "time")
+
+### `<<animationVelocity>>`
+
+- **Grammar:** `"±x|y|(width)|(height)|(rotation)|(scaleX)|(scaleY)"`
+- **Shorthand:** `"+x|y|w|h|(rot)|(x^)|(y^)"`
+- **Required:** Requireable
+- **Description:** animation velocity for properties for items in 2d and 3d viewports
+
+### `<<animationVelocity>>`
+
+- **Grammar:** `"±(depth)|z|(rotationX)|(rotationY)|(scaleZ)""`
+- **Shorthand:** `"+d|z|(rx)|(ry)|(z^)"`
+- **Required:** Requireable
+- **Description:** animation velocity for properties for items in 3d viewports
+
+### `<<animationOptions>>`
+
+- **Grammar:** `"ª(frame)|(value)|(scrollX)|(scrollY)"`
+- **Shorthand:** `">f|v|(sx)|(sy)"`
+- **Required:** Requireable
+- **Description:** animation options; `<<property>>` "value" can only be animated when it is `<<number>>` (i.e., `<<itemClass>>` is "num" or "dt" or "time")
+
+### `<<animationOptions>>`
+
+- **Grammar:** `"ªx|y|(width)|(height)|(rotation)|(scaleX)|(scaleY)"`
+- **Shorthand:** `">x|y|w|h|(rot)|(x^)|(y^)"`
+- **Required:** Requireable
+- **Description:** animation options for items in 2d and 3d viewports
+
+### `<<animationOptions>>`
+
+- **Grammar:** `"ª(depth)|z|(rotationX)|(rotationY)|(scaleZ)"`
+- **Shorthand:** `">d|z|(rx)|(ry)|(z^)"`
+- **Required:** Requireable
+- **Description:** animation options for items in 3d viewports
+
+### `<<aniOpt>>`
+
+- **Grammar:** `"\+\+":<<number>>`
+- **Required:** Requireable
+- **Description:** current acceleration (i.e., rate of change to current velocity per second)
+
+### `<<aniOpt>>`
+
+- **Grammar:** `"step":<<number>>`
+- **Required:** Requireable
+- **Description:** animation step; if "step" is supplied, animation is not smooth, but rather jumps by `<<number>>`; "step" for `<<propName>>` "f" is always 1; if "step" is not supplied (null), and this is animation for `<<propName>>` "value" of a numeric item (component type "num" or "dt" or "time") then `<<aniOpt>>` "step" is inferred from this item's `<<numProp>>` "step"
+
+### `<<aniOpt>>`
+
+- **Grammar:** `"min":<<number>>`
+- **Required:** Requireable
+- **Description:** animation stopping point lower-bound; animation stops when animated property value is less than or equal to `<<number>>`; if "min" is not supplied (null) for "ªvalue", then `<<aniOpt>>` "min" is inferred from this item's `<<numProp>>` "min"; if "min" is not supplied (null) for "ªframe", "ªscrollX", or "ªscrollY", then `<<aniOpt>>` "min" is 0; when animation stops, the corresponding animated property `<<propName>>` is set to the `<<number>>`, and the corresponding `<<animationVelocity>>` "±`<<propName>>`" is set to "`<<terminalVelocity>>`" and a UI->APP message is sent with `<<userProp>>` "+`<<propName>>`":"`<<terminalVelocity>>`", where `<<terminalVelocity>>` is the terminal velocity -- the last known value of "±`<<propName>>`"
+
+### `<<aniOpt>>`
+
+- **Grammar:** `"max":<<number>>`
+- **Required:** Requireable
+- **Description:** animation stopping point upper-bound; animation stops when animated property value is greater than or equal to `<<number>>`; if "max" is not supplied (null) for "ªvalue", then `<<aniOpt>>` "max" is inferred from this item's `<<numProp>>` "max"; if "max" is not supplied (null) for "ªscrollX", or "ªscrollY", then `<<aniOpt>>` "max" is 100; if "max" is not supplied (null) for "ªframe", then `<<aniOpt>>` "max" is equal to the maximum possible value for "frame" (i.e., length of `<<animation>>` property "frames" minus 1); when animation stops, the corresponding animated property `<<propName>>` is set to the `<<number>>`, and the corresponding `<<animationVelocity>>` "±`<<propName>>`" is set to "`<<terminalVelocity>>`" and a UI->APP message is sent with `<<userProp>>` "+`<<propName>>`":"`<<terminalVelocity>>`", where `<<terminalVelocity>>` is the terminal velocity -- the last known value of "±`<<propName>>`"
+
+### `<<aniOpt>>`
+
+- **Grammar:** `"request":[<<req>>(,<<req>>)*]`
+- **Shorthand:** `"r":[<<req>>(,<<req>>)*]`
+- **Required:** Requireable
+- **Description:** info to send to app software (alongside `<<userProp>>` `<<animationVelocity>>`:"`<<number>>`") when animation reaches "min" or "max" value; the requested info will be sent back via <userProp>> "r":{`<<reqInfo>>`(,`<<reqInfo>>`)*}
+
+## task instructions grammar
+
+### `<<instructions>>`
+
+- **Grammar:** `<<taskState>>:<<conds>>`
+- **Required:** Requireable
+- **Description:** instructions laying out task goals and end-state; replaces prior instructions for a given `<<taskState>>`
+
+### `<<instructions>>`
+
+- **Grammar:** `"rules":[<<rule>>(,<<rule>>)*]`
+- **Required:** Requireable
+- **Description:** instructions laying out some if-then rules for the task; replaces prior rules
+
+### `<<taskState>>`
+
+- **Grammar:** `"(good)|(bad)|(end)|(win)|(loss)"`
+- **Required:** Requireable
+- **Description:** task state; "good" signifies user should seek the described condition, "bad" signifies user is to avoid it, "end" signifies current condition describes when the task ends, and "win" or "loss" signify that the primary task objective is to pursue or to avoid current condition, respectively
+
+### `<<conds>>`
+
+- **Grammar:** `[<<cond>>(,<<cond>>)*]`
+- **Required:** Requireable
+- **Description:** list of condition sets for current `<<taskState>>` or `<<rule>>`
+
+### `<<cond>>`
+
+- **Grammar:** `{<<condProp>>(,<<condProp>>)*}`
+- **Required:** Requireable
+- **Description:** set of conditions; any of these may be met
+
+### `<<condProp>>`
+
+- **Grammar:** `<<matchByVal>>|<<matchByOp>>`
+- **Required:** Requireable
+- **Description:** condition may match exact values or using inequality operators
+
+### `<<condProp>>`
+
+- **Grammar:** `"task":<<taskState>>`
+- **Required:** Requireable
+- **Description:** task state condition
+
+### `<<condProp>>`
+
+- **Grammar:** `"and":<<cond>>`
+- **Required:** Requireable
+- **Description:** additional condition that must be met for the current condition to be met
+
+### `<<matchByOp>>`
+
+- **Grammar:** `<<propName>>:{<<operator>>(,<<operator>>)*}`
+- **Required:** Requireable
+- **Description:** match by operator
+
+### `<<operator>>`
+
+- **Grammar:** `"=|(!=)|<|>|(<=)|(>=)":<<value>>|<<ref>>|<<valrefs>>`
+- **Required:** Requireable
+- **Description:** equality match operators; "=":`<<valrefs>>` is inclusion check (one of these `<<valrefs>>` must match); "!=":`<<valrefs>>` is a blacklist (no value can match)
+
+### `<<operator>>`
+
+- **Grammar:** `"~":<<value>>|<<ref>>`
+- **Required:** Requireable
+- **Description:** scalable match operator; the closer current item/property is to the specified `<<value>>`|`<<ref>>`, the more true the condition
+
+### `<<operator>>`
+
+- **Grammar:** `">>":<<value>>|<<ref>>`
+- **Required:** Requireable
+- **Description:** "after" match operator; the result is expected after `<<value>>`|`<<ref>>` has been reached; this is useful when indicating end of progression (regardless the direction of said progression)
+
+### `<<valrefs>>`
+
+- **Grammar:** `[<<value>>|<<ref>>(,<<value>>|<<ref>>)*]`
+- **Required:** Requireable
+
+### `<<ref>>`
+
+- **Grammar:** `{<<refop>>(,<<refop>>)*}`
+- **Required:** Requireable
+- **Description:** value-by-reference; must include either "prop" or "uid" `<<refop>>`
+
+### `<<refop>>`
+
+- **Grammar:** `"uid":<<uid>>`
+- **Required:** Requireable
+- **Description:** reference to another item (default is current item)
+
+### `<<ref>>`
+
+- **Grammar:** `"prop":<<propName>>`
+- **Required:** Requireable
+- **Description:** reference to a property value (default is current property)
+
+### `<<refop>>`
+
+- **Grammar:** `"\+|\*|^|(min)|(max)":<<number>>`
+- **Required:** Requireable
+- **Description:** numeric operation to perform on current value-by-reference prior to `<<cond>>` comparisons; numeric operations are performed in the following order: ^, *, +, min, max; "+":`<<number>>` adds `<<number>>` to referenced property value; "*":`<<number>>` multiplies referenced property value by `<<number>>`; "^":`<<number>>` raises referenced property value by `<<number>>` as exponent; "min":`<<number>>` uses `<<number>>` or referenced property value, whichever is smaller; "max":`<<number>>` uses `<<number>>` or referenced property value, whichever is greater; "*":`<<number>>` multiplies referenced property value by `<<number>>`
+
+### `<<rule>>`
+
+- **Grammar:** `{"if":<<conds>>,"then":[<<expected>>,(<<expected>>)*]}`
+- **Required:** Requireable
+- **Description:** if-then expectations for the task
+
+### `<<expected>>`
+
+- **Grammar:** `{(<<expectedProp>>(,<<expectedProp>>)*}`
+- **Required:** Requireable
+- **Description:** expected updates
+
+### `<<expectedProp>>`
+
+- **Grammar:** `"U":<<uid>>`
+- **Required:** Requireable
+- **Description:** unique id of item expected to be updated
+
+### `<<expectedProp>>`
+
+- **Grammar:** `<<propName>>:<<value>>|<<container>>|<<ref>>`
+- **Required:** Requireable
+- **Description:** expected property change
+

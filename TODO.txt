@@ -1,0 +1,3 @@
+{"error":"some error","t":`<<ums>>`}
+if json, wrap w/ ``
+if <<>> inside json. don't wrap with `` coz it will be double
