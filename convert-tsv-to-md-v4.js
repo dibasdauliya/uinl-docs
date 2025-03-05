@@ -91,12 +91,67 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
       }
 
       if (row["Description"]) {
-        // mdxContent += `- **Description:** ${row["Description"]}\n`;
-        const formattedDescription = row["Description"].replace(
-          /<<[^>]+>>/g,
-          (match) => `\`${match}\``
-        );
-        mdxContent += `- **Description:** ${formattedDescription}\n`;
+        let description = row["Description"];
+
+        // replace <= with &lt;=
+        description = description
+          .replace(/<=/g, "&lt;=")
+          .replace(/">"/g, '"&gt;"')
+          .replace(/"<"/g, '"&lt;"');
+
+        // Split the text into parts: JSON and non-JSON
+        const parts = [];
+        let lastIndex = 0;
+
+        // Find all JSON matches
+        const jsonMatches = [
+          ...description.matchAll(
+            /((\[[^\}]{3,})?\{s*[^\}\{]{3,}?:.*\}([^\{]+\])?)/g
+          ),
+        ];
+
+        jsonMatches.forEach((match) => {
+          // Add text before JSON (if any)
+          if (match.index > lastIndex) {
+            const beforeText = description.slice(lastIndex, match.index);
+            parts.push({
+              type: "text",
+              content: beforeText,
+            });
+          }
+
+          // Add JSON part
+          parts.push({
+            type: "json",
+            content: match[0],
+          });
+
+          lastIndex = match.index + match[0].length;
+        });
+
+        // Add remaining text after last JSON (if any)
+        if (lastIndex < description.length) {
+          parts.push({
+            type: "text",
+            content: description.slice(lastIndex),
+          });
+        }
+
+        // Process each part appropriately
+        const formattedParts = parts.map((part) => {
+          if (part.type === "json") {
+            // Wrap JSON with backticks, but don't modify <<...>> inside
+            return `\`${part.content}\``;
+          } else {
+            // For non-JSON text, wrap <<...>> with backticks
+            return part.content.replace(
+              /<<[^>]+>>/g,
+              (match) => `\`${match}\``
+            );
+          }
+        });
+
+        mdxContent += `- **Description:** ${formattedParts.join("")}\n`;
       }
 
       if (row["Notes"]) {
