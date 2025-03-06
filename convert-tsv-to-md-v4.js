@@ -13,6 +13,35 @@ if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
 
+function extractJSONObjects(text) {
+  const results = [];
+  let braceCount = 0;
+  let start = -1;
+
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "{" && (start === -1 || braceCount === 0)) {
+      if (start === -1) start = i;
+      braceCount++;
+    } else if (text[i] === "{") {
+      braceCount++;
+    } else if (text[i] === "}") {
+      braceCount--;
+
+      if (braceCount === 0 && start !== -1) {
+        const potentialJSON = text.substring(start, i + 1);
+        results.push({
+          text: potentialJSON,
+          start: start,
+          end: i + 1,
+        });
+        start = -1;
+      }
+    }
+  }
+
+  return results;
+}
+
 const tsvContent = fs.readFileSync(tsvFilePath, "utf-8");
 
 const lines = tsvContent.split("\n");
@@ -97,39 +126,86 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
         description = description
           .replace(/<=/g, "&lt;=")
           .replace(/">"/g, '"&gt;"')
-          .replace(/"<"/g, '"&lt;"');
+          .replace(/"<"/g, '"&lt;"')
+          // escape image syntax to prevent Module not found: Can't resolve '`<<url>>`'  error
+          .replace(/!\[(.*?)\]\((.*?)\)/g, "\\!\\[$1\\]\\($2\\)");
+
+        // if (/"r":\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/.test(description)) {
+        //   mdxContent += `- **Description:** \`${description}\`\n`;
+        // } else {
+
+        // description = description.replace(
+        //   /"r":\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g,
+        //   (match) => `\`${match}\``
+        // );
 
         // Split the text into parts: JSON and non-JSON
         const parts = [];
         let lastIndex = 0;
 
-        // Find all JSON matches
-        const jsonMatches = [
-          ...description.matchAll(
-            /((\[[^\}]{3,})?\{s*[^\}\{]{3,}?:.*\}([^\{]+\])?)/g
-          ),
-        ];
+        // const jsonMatches = [
+        //   ...description.matchAll(
+        //     // /((\[[^\}]{3,})?\{s*[^\}\{]{3,}?:.*\}([^\{]+\])?)/g
+        //     /\{(?:[^{}[\]"']|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\[(?:[^[\]"']|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')*\]|\{(?:[^{}[\]"']|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\[(?:[^[\]"']|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')*\])*\})*\}/g
+        //   ),
+        // ];
+
+        const jsonMatches = extractJSONObjects(description);
+
+        // jsonMatches.forEach((match) => {
+        //   // Add text before JSON (if any)
+        //   if (match.index > lastIndex) {
+        //     const beforeText = description.slice(lastIndex, match.index);
+        //     parts.push({
+        //       type: "text",
+        //       content: beforeText,
+        //     });
+        //   }
+
+        //   // Add JSON part
+        //   parts.push({
+        //     type: "json",
+        //     content: match.text,
+        //   });
+
+        //   lastIndex = match.end;
+        // });
 
         jsonMatches.forEach((match) => {
           // Add text before JSON (if any)
-          if (match.index > lastIndex) {
-            const beforeText = description.slice(lastIndex, match.index);
+          if (match.start > lastIndex) {
+            const beforeText = description.slice(lastIndex, match.start);
             parts.push({
               type: "text",
               content: beforeText,
             });
           }
 
-          // Add JSON part
-          parts.push({
-            type: "json",
-            content: match[0],
-          });
-
-          lastIndex = match.index + match[0].length;
+          if (match.text.startsWith('"r":{')) {
+            parts.push({
+              type: "reqInfo",
+              content: match.text,
+            });
+          } else {
+            const afterText = description
+              .slice(match.end)
+              .match(/^[^.!?;]*[.!?;]?\s*/);
+            if (afterText && afterText[0].trim()) {
+              parts.push({
+                type: "json",
+                content: match.text + afterText[0],
+              });
+              lastIndex = match.end + afterText[0].length;
+            } else {
+              parts.push({
+                type: "json",
+                content: match.text,
+              });
+              lastIndex = match.end;
+            }
+          }
         });
 
-        // Add remaining text after last JSON (if any)
         if (lastIndex < description.length) {
           parts.push({
             type: "text",
@@ -137,13 +213,10 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
           });
         }
 
-        // Process each part appropriately
         const formattedParts = parts.map((part) => {
           if (part.type === "json") {
-            // Wrap JSON with backticks, but don't modify <<...>> inside
             return `\`${part.content}\``;
           } else {
-            // For non-JSON text, wrap <<...>> with backticks
             return part.content.replace(
               /<<[^>]+>>/g,
               (match) => `\`${match}\``
