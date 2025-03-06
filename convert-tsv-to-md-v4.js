@@ -74,16 +74,16 @@ dataRows.forEach((row) => {
   groupedByType[type].push(rowData);
 });
 
-mdxContent += `## Table of Contents\n\n`;
-Object.keys(groupedByType).forEach((type) => {
-  const anchor = type
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^\w-]/g, "");
-  mdxContent += `- [${type}](#${anchor})\n`;
-});
+// mdxContent += `## Table of Contents\n\n`;
+// Object.keys(groupedByType).forEach((type) => {
+//   const anchor = type
+//     .toLowerCase()
+//     .replace(/\s+/g, "-")
+//     .replace(/[^\w-]/g, "");
+//   mdxContent += `- [${type}](#${anchor})\n`;
+// });
 
-mdxContent += `\n`;
+// mdxContent += `\n`;
 
 Object.entries(groupedByType).forEach(([type, rows]) => {
   // const typeAnchor = type
