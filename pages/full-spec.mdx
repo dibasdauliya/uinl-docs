@@ -1,6 +1,6 @@
 # UINL v1.2 Full Specification
 
-## user-side event
+## User-Side Event
 
 ### `<<UI→APP>>`
 
@@ -14,7 +14,7 @@
 - **Required:** Always
 - **Description:** user-side action/event (e.g. button-click, textbox edit)
 
-## app-originated UI update
+## App-Originated UI Update
 
 ### `<<APP→UI>>`
 
@@ -22,7 +22,7 @@
 - **Required:** Always
 - **Description:** app-driven updates to user display; by default UINL protocol is synchronous, requiring an APP->UI message in response to every UI->APP message; when there are no `<<uiDirective>>`'s (i.e., APP->UI message is `{}) that signifies there are no display updates; `see `<<uiDirective>>` "!async" for description of asynchronous mode and how it's enabled
 
-## user-side event property
+## User-Side Event Property
 
 ### `<<uiInfo>>`
 
@@ -516,7 +516,7 @@
 - **Required:** Requireable
 - **Description:** audio/video settings; at a minimum `<<settings>>` should include "length":`<<number>>` to describe media duration in seconds; other potential `<<settings>>` that UI software may provide are "volume":`<<uint>>` (`<<uint>>` between 0 and 100), "rate":`<<number>>` (`<<number>>` signifies proportion of normal A/V speed, where 1 is normal speed), "quality":`<<text>>` (e.g., "quality":"hd1080"), and "captions":`<<text>>` (e.g., "captions":"English")
 
-## app-originated command
+## App-Originated Command
 
 ### `<<uiDirective>>`
 
@@ -740,7 +740,7 @@
 - **Required:** Requireable
 - **Description:** simulate a user-generated event; this is useful for triggering updates bound to a "!trigger" or, in the case where `<<eventInfo>>` is "ctx":[(`<<xy>>`)?], for bringing up a `<<contextMenu>>` for items that have "onContext":`<<contextMenu>>` property
 
-## widget property
+## Widget Property
 
 ### `<<uiDirective>>`
 
@@ -1467,7 +1467,7 @@
 - **Required:** Requireable
 - **Description:** animation options for a numeric property
 
-## widget type
+## Widget Type
 
 ### `<<itemClass>>`
 
@@ -1643,7 +1643,7 @@
 - **Required:** Requireable
 - **Description:** this item is a line/link in a "2d" or "3d" graphical container -- a terminating item inside a "gr" container; the value property of "l" items is a partial `<<uid>>` of another item within this "2d" or "3d" graph -- it specifies a unique path to another item within this item's root "2d" or "3d" graph container; if this item has no value, it links to its parent "gr" item's next sibling, if one exists (i.e., APP->UI message `{"A":[{"c":"2d","w":50,"h":50,"df":{"v":[{}]},"v":[{"x":10,"y":10},{"x":25,"y":40},{"x":40,"y":10}]}]} will draw a V shape with vertices at (10,10), (25,40), and (40,10))`
 
-## details
+## Details
 
 ### `<<container>>`
 
@@ -2354,7 +2354,7 @@
 - **Required:** Requireable
 - **Description:** info to send to app software (alongside `<<userProp>>` `<<animationVelocity>>`:"`<<number>>`") when animation reaches "min" or "max" value; the requested info will be sent back via `<<userProp>>` "r":`{<<reqInfo>>(,<<reqInfo>>)*}`
 
-## task instructions grammar
+## Task Instructions Grammar
 
 ### `<<instructions>>`
 

@@ -42,6 +42,25 @@ function extractJSONObjects(text) {
   return results;
 }
 
+function formatTitle(str) {
+  const parts = str.split(" ");
+
+  const formatted = parts.map((part) => {
+    const words = part.split("-");
+
+    const capitalizedWords = words.map((word) => {
+      if (word === word.toUpperCase() && word.length > 1) {
+        return word;
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    });
+
+    // if hyphens, join back with hyphens
+    return capitalizedWords.join("-");
+  });
+  return formatted.join(" ");
+}
+
 const tsvContent = fs.readFileSync(tsvFilePath, "utf-8");
 
 const lines = tsvContent.split("\n");
@@ -91,7 +110,7 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
   //   .replace(/\s+/g, "-")
   //   .replace(/[^\w-]/g, "");
   // mdxContent += `## ${type} {#${typeAnchor}}\n\n`;
-  mdxContent += `## ${type}\n\n`;
+  mdxContent += `## ${formatTitle(type)}\n\n`;
 
   rows.forEach((row) => {
     const heading = row["Label"] || row["Grammar"];
@@ -99,7 +118,7 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
       const formattedHeading = heading
         .replace(/->/g, "→")
         .replace(/<<[^>]+>>/g, (match) => `\`${match}\``);
-      mdxContent += `### ${formattedHeading}\n\n`;
+      mdxContent += `### ${formatTitle(formattedHeading)}\n\n`;
 
       if (row["Label"] && row["Grammar"] && row["Label"] !== row["Grammar"]) {
         mdxContent += `- **Grammar:** \`${row["Grammar"]}\`\n`;
