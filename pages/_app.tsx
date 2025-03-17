@@ -10,7 +10,7 @@ function MyApp({ Component, pageProps }) {
       if (typeof children === "string" && children.includes("<<")) {
         const processedContent = children.replace(/<<([^>]+)>>/g, (_, text) => {
           const href = text.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-          return `<<<a class="nx-text-primary-600 contrast-more:!nx-text-primary-600 contrast-more:nx-text-gray-900" href="#${href}">${text}</a>>>`;
+          return `<a class="nx-text-primary-600 contrast-more:!nx-text-primary-600 contrast-more:nx-text-gray-900" href="#${href}">${text}</a>`;
         });
 
         return (

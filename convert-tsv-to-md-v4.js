@@ -117,7 +117,7 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
     if (heading) {
       const formattedHeading = heading
         .replace(/->/g, "→")
-        .replace(/<<[^>]+>>/g, (match) => `\`${match}\``);
+        .replace(/<<[^>]+>>/g, (match) => `\`${match.slice(2, -2)}\``);
       mdxContent += `### ${formatTitle(formattedHeading)}\n\n`;
 
       if (row["Label"] && row["Grammar"] && row["Label"] !== row["Grammar"]) {
@@ -238,7 +238,7 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
           } else {
             return part.content.replace(
               /<<[^>]+>>/g,
-              (match) => `\`${match}\``
+              (match) => `\`${match.slice(2, -2)}\``
             );
           }
         });
@@ -250,7 +250,7 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
         // mdxContent += `- **Notes:** ${row["Notes"]}\n`;
         const formattedNotes = row["Notes"].replace(
           /<<[^>]+>>/g,
-          (match) => `\`${match}\``
+          (match) => `\`${match.slice(2, -2)}\``
         );
         mdxContent += `- **Notes:** ${formattedNotes}\n`;
       }
@@ -265,14 +265,14 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
 
             const formattedExample = example
               .trim()
-              .replace(/<<[^>]+>>/g, (match) => `\`${match}\``);
+              .replace(/<<[^>]+>>/g, (match) => `\`${match.slice(2, -2)}\``);
             mdxContent += `  - ${formattedExample}\n`;
           });
         } else {
           // mdxContent += `  - \`${row["Examples"]}\`\n`;
           const formattedExample = row["Examples"].replace(
             /<<[^>]+>>/g,
-            (match) => `\`${match}\``
+            (match) => `\`${match.slice(2, -2)}\``
           );
           mdxContent += `  - ${formattedExample}\n`;
         }
