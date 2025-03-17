@@ -97,7 +97,7 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
     const heading = row["Label"] || row["Grammar"];
     if (heading) {
       const formattedHeading = heading
-        .replace(/->/g, "&rarr;")
+        .replace(/->/g, "→")
         .replace(/<<[^>]+>>/g, (match) => `\`${match}\``);
       mdxContent += `### ${formattedHeading}\n\n`;
 

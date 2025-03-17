@@ -2,13 +2,13 @@
 
 ## user-side event
 
-### `<<UI&rarr;APP>>`
+### `<<UI→APP>>`
 
 - **Grammar:** `{(<<uiInfo>>,)*"t":0(,<<uiInfo>>)*}`
 - **Required:** Always
 - **Description:** handshake; this is the first message sent from user-agent to app software once user-agent software is loaded and ready; no other UI->APP or APP->UI messages should precede this message; detailed `<<uiInfo>>` is strictly voluntary, though highly encouraged (especially "userAgent" and "time" `<<uiInfo>>`)
 
-### `<<UI&rarr;APP>>`
+### `<<UI→APP>>`
 
 - **Grammar:** `{<<userProp>>(,<<userProp>>)*}`
 - **Required:** Always
@@ -16,7 +16,7 @@
 
 ## app-originated UI update
 
-### `<<APP&rarr;UI>>`
+### `<<APP→UI>>`
 
 - **Grammar:** `{(<<uiDirective>>(,<<uiDirective>>)*)?}`
 - **Required:** Always
