@@ -93,23 +93,7 @@ dataRows.forEach((row) => {
   groupedByType[type].push(rowData);
 });
 
-// mdxContent += `## Table of Contents\n\n`;
-// Object.keys(groupedByType).forEach((type) => {
-//   const anchor = type
-//     .toLowerCase()
-//     .replace(/\s+/g, "-")
-//     .replace(/[^\w-]/g, "");
-//   mdxContent += `- [${type}](#${anchor})\n`;
-// });
-
-// mdxContent += `\n`;
-
 Object.entries(groupedByType).forEach(([type, rows]) => {
-  // const typeAnchor = type
-  //   .toLowerCase()
-  //   .replace(/\s+/g, "-")
-  //   .replace(/[^\w-]/g, "");
-  // mdxContent += `## ${type} {#${typeAnchor}}\n\n`;
   mdxContent += `## ${formatTitle(type)}\n\n`;
 
   rows.forEach((row) => {
@@ -125,12 +109,6 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
       }
 
       if (row["Shorthand"]) {
-        // mdxContent += `- **Shorthand:** \`${row["Shorthand"]}\`\n`;
-
-        // const formattedShorthand = row["Shorthand"].replace(
-        //   /<<[^>]+>>/g,
-        //   (match) => `\`${match}\``
-        // );
         mdxContent += `- **Shorthand:** \`${row["Shorthand"]}\`\n`;
       }
 
@@ -149,15 +127,6 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
           // escape image syntax to prevent Module not found: Can't resolve '`<<url>>`'  error
           .replace(/!\[(.*?)\]\((.*?)\)/g, "\\!\\[$1\\]\\($2\\)");
 
-        // if (/"r":\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/.test(description)) {
-        //   mdxContent += `- **Description:** \`${description}\`\n`;
-        // } else {
-
-        // description = description.replace(
-        //   /"r":\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g,
-        //   (match) => `\`${match}\``
-        // );
-
         // Split the text into parts: JSON and non-JSON
         const parts = [];
         let lastIndex = 0;
@@ -171,25 +140,6 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
 
         const jsonMatches = extractJSONObjects(description);
 
-        // jsonMatches.forEach((match) => {
-        //   // Add text before JSON (if any)
-        //   if (match.index > lastIndex) {
-        //     const beforeText = description.slice(lastIndex, match.index);
-        //     parts.push({
-        //       type: "text",
-        //       content: beforeText,
-        //     });
-        //   }
-
-        //   // Add JSON part
-        //   parts.push({
-        //     type: "json",
-        //     content: match.text,
-        //   });
-
-        //   lastIndex = match.end;
-        // });
-
         jsonMatches.forEach((match) => {
           // Add text before JSON (if any)
           if (match.start > lastIndex) {
@@ -200,29 +150,12 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
             });
           }
 
-          if (match.text.startsWith('"r":{')) {
-            parts.push({
-              type: "reqInfo",
-              content: match.text,
-            });
-          } else {
-            const afterText = description
-              .slice(match.end)
-              .match(/^[^.!?;]*[.!?;]?\s*/);
-            if (afterText && afterText[0].trim()) {
-              parts.push({
-                type: "json",
-                content: match.text + afterText[0],
-              });
-              lastIndex = match.end + afterText[0].length;
-            } else {
-              parts.push({
-                type: "json",
-                content: match.text,
-              });
-              lastIndex = match.end;
-            }
-          }
+          // Just add the JSON without trying to include trailing text
+          parts.push({
+            type: match.text.startsWith('"r":{') ? "reqInfo" : "json",
+            content: match.text,
+          });
+          lastIndex = match.end;
         });
 
         if (lastIndex < description.length) {

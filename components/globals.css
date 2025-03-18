@@ -6,4 +6,70 @@
   .grammar-notation a:hover {
     text-decoration: underline;
   }
+
+  pre {
+    background-color: #2d2d2d;
+    padding: 1.5rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    line-height: 1.5;
+  }
+
+  pre code {
+    font-family: "Fira Code", "SFMono-Regular", Consolas, "Liberation Mono",
+      Menlo, monospace;
+    font-size: 14px;
+    color: #e6e6e6;
+  }
+
+  /* Syntax highlighting classes */
+  .code-block {
+    display: block;
+    white-space: pre;
+  }
+
+  /* Specific syntax elements */
+  .string {
+    color: #98c379; /* Green for strings */
+  }
+
+  .key {
+    color: #e06c75; /* Red-pink for keys */
+  }
+
+  .number {
+    color: #d19a66; /* Orange for numbers */
+  }
+
+  .operator {
+    color: #56b6c2; /* Cyan for operators */
+  }
+
+  .bracket {
+    color: #c678dd; /* Purple for brackets */
+  }
+
+  .error {
+    color: #ff5555; /* Bright red for errors */
+  }
+
+  /* Scrollbar styling for webkit browsers */
+  pre::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  pre::-webkit-scrollbar-track {
+    background: #3d3d3d;
+    border-radius: 4px;
+  }
+
+  pre::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+  }
+
+  pre::-webkit-scrollbar-thumb:hover {
+    background: #777;
+  }
 }
