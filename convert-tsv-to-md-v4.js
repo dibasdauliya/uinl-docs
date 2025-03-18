@@ -167,7 +167,7 @@ Object.entries(groupedByType).forEach(([type, rows]) => {
 
         const formattedParts = parts.map((part) => {
           if (part.type === "json") {
-            return `\`${part.content}\``;
+            return `\n\`\`\`json\n${part.content}\n\`\`\`\n`;
           } else {
             return part.content.replace(
               /<<[^>]+>>/g,

@@ -20,7 +20,11 @@
 
 - **Grammar:** `{(<<uiDirective>>(,<<uiDirective>>)*)?}`
 - **Required:** Always
-- **Description:** app-driven updates to user display; by default UINL protocol is synchronous, requiring an APP->UI message in response to every UI->APP message; when there are no `uiDirective`'s (i.e., APP->UI message is `{}`) that signifies there are no display updates; see `uiDirective` "!async" for description of asynchronous mode and how it's enabled
+- **Description:** app-driven updates to user display; by default UINL protocol is synchronous, requiring an APP->UI message in response to every UI->APP message; when there are no `uiDirective`'s (i.e., APP->UI message is 
+```json
+{}
+```
+) that signifies there are no display updates; see `uiDirective` "!async" for description of asynchronous mode and how it's enabled
 
 ## User-Side Event Property
 
@@ -70,7 +74,11 @@
 
 - **Grammar:** `"screen":<<settings>>`
 - **Required:** Always
-- **Description:** user screen information (e.g. `{"availWidth":1168,"availHeight":692,"width":1229,"height":692,"colorDepth":24,"pixelDepth":24,"availLeft":0,"availTop":0,"orientation":{"angle":0,"type":"landscape-primary"}}`); at a minimum, if this information is available, returned `settings` should include "width":`number` and "height":`number`
+- **Description:** user screen information (e.g. 
+```json
+{"availWidth":1168,"availHeight":692,"width":1229,"height":692,"colorDepth":24,"pixelDepth":24,"availLeft":0,"availTop":0,"orientation":{"angle":0,"type":"landscape-primary"}}
+```
+); at a minimum, if this information is available, returned `settings` should include "width":`number` and "height":`number`
 
 ### `userProp`
 
@@ -94,7 +102,11 @@
 
 - **Grammar:** `"u":<<id>>|<<idPath>>`
 - **Required:** Always
-- **Description:** unique id or path for item being toggled/changed by user; this `userProp` is present in every UI->APP message, except when when message does not apply to any specific item, but rather to the display as a whole (e.g. `{"error":"some error","t":<<ums>>}`); `id` must be send instead of `idPath` whenever `id` is unique within display; `idPath` must be sent instead of `id` whenever `id` does not uniquely identify the item within the display
+- **Description:** unique id or path for item being toggled/changed by user; this `userProp` is present in every UI->APP message, except when when message does not apply to any specific item, but rather to the display as a whole (e.g. 
+```json
+{"error":"some error","t":<<ums>>}
+```
+); `id` must be send instead of `idPath` whenever `id` is unique within display; `idPath` must be sent instead of `id` whenever `id` does not uniquely identify the item within the display
 
 ### `userProp`
 
@@ -106,7 +118,11 @@
 
 - **Grammar:** `"requirable":{(<<required>>(,<<required>>)*)?}`
 - **Required:** Always
-- **Description:** inform app software which options and option-values are available (i.e., can be required) in user-agent software; this is sent as a response to `uiDirective` "!!require":`{}`
+- **Description:** inform app software which options and option-values are available (i.e., can be required) in user-agent software; this is sent as a response to `uiDirective` "!!require":
+```json
+{}
+```
+
 
 ### `userProp`
 
@@ -523,21 +539,37 @@
 - **Grammar:** `"!!require":{}`
 - **Shorthand:** `"require":{}`
 - **Required:** Always
-- **Description:** request the full list of options and option-values that are available (i.e., can be required) in user-agent software; APP->UI message `{"!!require":{}}` will trigger a corresponding response UI->APP message containing `userProp` "requirable":`{(<<required>>(,<<required>>)*)?}`
+- **Description:** request the full list of options and option-values that are available (i.e., can be required) in user-agent software; APP->UI message 
+```json
+{"!!require":{}}
+```
+ will trigger a corresponding response UI->APP message containing `userProp` "requirable":
+```json
+{(<<required>>(,<<required>>)*)?}
+```
+
 
 ### `uiDirective`
 
 - **Grammar:** `"!!require":{<<required>>(,<<required>>)*}`
 - **Shorthand:** `"require":{<<required>>(,<<required>>)*}`
 - **Required:** Always
-- **Description:** specify which options and option-values are required for correctly interpreting essential application requests; if any of the `required` features need to be imported/loaded, user-agent software should import and load these features upon receiving this `uiDirective`; if any of the `required` features are not implemented yet in user-agent software, the suggested behavior is to disconnect from the app after a polite `{"t":<<ums>>,"error":"<<required>> is not implemented. Disconnecting."}`
+- **Description:** specify which options and option-values are required for correctly interpreting essential application requests; if any of the `required` features need to be imported/loaded, user-agent software should import and load these features upon receiving this `uiDirective`; if any of the `required` features are not implemented yet in user-agent software, the suggested behavior is to disconnect from the app after a polite 
+```json
+{"t":<<ums>>,"error":"<<required>> is not implemented. Disconnecting."}
+```
+
 
 ### `uiDirective`
 
 - **Grammar:** `"!state":<<uint>>`
 - **Shorthand:** `"S":<<uint>>`
 - **Required:** Always
-- **Description:** Session closing; "S":`uint` indicates that app-software is closing and no more UI->APP messages will be received; APP->UI message `{"S":<<uint>>,"v":null}` indicates that session is over and the app window should be closed (though the ability to close app window is not guaranteed); state "S":0 indicates that app software closed normally with no errors, and "S":1 or any other `uint` indicates that app software closed abnormally due to some error, where the `uint` is the error code (0 as normal termination and non-zero integer as abnormal termination are convention exit codes in most programming languages; e.g., C/C#: return 0, Swift: exit(0), Kotlin: exitProcess(0), Java: System.exit(0))
+- **Description:** Session closing; "S":`uint` indicates that app-software is closing and no more UI->APP messages will be received; APP->UI message 
+```json
+{"S":<<uint>>,"v":null}
+```
+ indicates that session is over and the app window should be closed (though the ability to close app window is not guaranteed); state "S":0 indicates that app software closed normally with no errors, and "S":1 or any other `uint` indicates that app software closed abnormally due to some error, where the `uint` is the error code (0 as normal termination and non-zero integer as abnormal termination are convention exit codes in most programming languages; e.g., C/C#: return 0, Swift: exit(0), Kotlin: exitProcess(0), Java: System.exit(0))
 
 ### `uiDirective`
 
@@ -564,7 +596,23 @@
 - **Grammar:** `"!update":<<uid>>`
 - **Shorthand:** `"U":<<uid>>`
 - **Required:** Always
-- **Description:** update; this `Command` is only valid for container-type items; find and update item with the specified `uid` (recursive search, starting at current container); use this command only at root level (e.g., `{"U":"my item","v":"hello world"}`) or as a `qUpdate` inside a queue list (e.g., `{"U":"my container","Q":[{"U":0,"v":"a"},{"U":1,"v":"b"},{"U":2,"v":"c"}]}`), NOT inside a "value" or "add" `container` of declarations (i.e., `{"value":[{"id":"my item","value":"hello"},{"U":"my item","value":"goodbye"}]}` is NOT correct and may lead to unexpected results, whereas `{"value":[{"id":"my item","value":"hello"}],"queue":[{"U":"my item","value":"goodbye"}]}` is the correct way to add a label titled "my item" whose text is "hello", and then immediately change its text to "goodbye")
+- **Description:** update; this `Command` is only valid for container-type items; find and update item with the specified `uid` (recursive search, starting at current container); use this command only at root level (e.g., 
+```json
+{"U":"my item","v":"hello world"}
+```
+) or as a `qUpdate` inside a queue list (e.g., 
+```json
+{"U":"my container","Q":[{"U":0,"v":"a"},{"U":1,"v":"b"},{"U":2,"v":"c"}]}
+```
+), NOT inside a "value" or "add" `container` of declarations (i.e., 
+```json
+{"value":[{"id":"my item","value":"hello"},{"U":"my item","value":"goodbye"}]}
+```
+ is NOT correct and may lead to unexpected results, whereas 
+```json
+{"value":[{"id":"my item","value":"hello"}],"queue":[{"U":"my item","value":"goodbye"}]}
+```
+ is the correct way to add a label titled "my item" whose text is "hello", and then immediately change its text to "goodbye")
 
 ### `Command`
 
@@ -592,14 +640,30 @@
 - **Grammar:** `"!async":<<uint>>`
 - **Shorthand:** `"&":<<uint>>`
 - **Required:** Requireable
-- **Description:** time in milliseconds since the initial UI->APP message (i.e., handshake) was received by the application; for asynchronous tasks it is good practice to include this `uiDirective` in every APP->UI messages; use `{"!!require":{..."ts":[]...}}` to announce to user-agent software that the application will employ asynchronous protocol (otherwise user-agent software will assume that message protocol is synchronous, such that each UI->APP message will be treated as a request by the application, and will be followed immediately by one, and only one, APP->UI response message)
+- **Description:** time in milliseconds since the initial UI->APP message (i.e., handshake) was received by the application; for asynchronous tasks it is good practice to include this `uiDirective` in every APP->UI messages; use 
+```json
+{"!!require":{..."ts":[]...}}
+```
+ to announce to user-agent software that the application will employ asynchronous protocol (otherwise user-agent software will assume that message protocol is synchronous, such that each UI->APP message will be treated as a request by the application, and will be followed immediately by one, and only one, APP->UI response message)
 
 ### `uiDirective`
 
 - **Grammar:** `"!task":{<<instructions>>(,<<instructions>>)*}`
 - **Shorthand:** `"task":{<<instructions>>(,<<instructions>>)*}`
 - **Required:** Requireable
-- **Description:** task instructions; "task" may be called multiple times, updating each `instructions` separately (e.g., APP->UI message `{"task":{"end":[{"id":"Round","v":{">>":10}}]},"good":[{"id":"Gold"}]}` instructs user that task ends after Round 10 and that the goal is to seek items named "Gold", and a follow-up APP->UI message `{"task":{"end":[{"id":"Round","v":{">>":12}}]}}` will partially update those instructions, informing user that instead of task ending after Round 10, it will end after Round 12); if task instruction specification is essential to the task, use "!!require":`{..."task":[(<<taskOptionName>>(,<<taskOptionName>>)*)?]...}` where `taskOptionName` is a name of `instructions`, `condProp`, `operator`, or `refop` used in instructions (i.e., "good", "bad", "win", "loss", "end", "rules","task", "and", "=", "~", ">>", "&gt;", "&lt;", ">=", "&lt;=", "!=", "uid", "prop", "+", "*", "^", "min", "max")
+- **Description:** task instructions; "task" may be called multiple times, updating each `instructions` separately (e.g., APP->UI message 
+```json
+{"task":{"end":[{"id":"Round","v":{">>":10}}]},"good":[{"id":"Gold"}]}
+```
+ instructs user that task ends after Round 10 and that the goal is to seek items named "Gold", and a follow-up APP->UI message 
+```json
+{"task":{"end":[{"id":"Round","v":{">>":12}}]}}
+```
+ will partially update those instructions, informing user that instead of task ending after Round 10, it will end after Round 12); if task instruction specification is essential to the task, use "!!require":
+```json
+{..."task":[(<<taskOptionName>>(,<<taskOptionName>>)*)?]...}
+```
+ where `taskOptionName` is a name of `instructions`, `condProp`, `operator`, or `refop` used in instructions (i.e., "good", "bad", "win", "loss", "end", "rules","task", "and", "=", "~", ">>", "&gt;", "&lt;", ">=", "&lt;=", "!=", "uid", "prop", "+", "*", "^", "min", "max")
 
 ### `uiDirective`
 
@@ -627,7 +691,19 @@
 - **Grammar:** `"!trigger":{(<<userPropTrigger>>(,(<<userPropTrigger>>)*)?}`
 - **Shorthand:** `"Tr":{(<<userPropTrigger>>(,(<<userPropTrigger>>)*)?}`
 - **Required:** Requireable
-- **Description:** trigger rule for current update; current update/declaration is triggered whenever UI->APP message matches the specified `userProp`'s; use "Tr":`{}` as a wildcard to trigger whenever any UI->APP message is sent; use "Tr":`{...<<userPropName>>:{}...}` as a wildcard to trigger whenever a UI->APP message includes `pName`, regardless of its corresponding value; use "Tr":`{..."u":null...}` to set up a trigger for root container events
+- **Description:** trigger rule for current update; current update/declaration is triggered whenever UI->APP message matches the specified `userProp`'s; use "Tr":
+```json
+{}
+```
+ as a wildcard to trigger whenever any UI->APP message is sent; use "Tr":
+```json
+{...<<userPropName>>:{}...}
+```
+ as a wildcard to trigger whenever a UI->APP message includes `pName`, regardless of its corresponding value; use "Tr":
+```json
+{..."u":null...}
+```
+ to set up a trigger for root container events
 
 ### `Command`
 
@@ -669,14 +745,22 @@
 - **Grammar:** `"!updateChildren":{(<<matchByVal>>(,<<matchByVal>>)*)?}`
 - **Shorthand:** `"U\*":{(<<matchByVal>>(,<<matchByVal>>)*)?}`
 - **Required:** Requireable
-- **Description:** update multiple child items of current container; this `Command` is only valid for container-type items; select all items that match all `matchByVal`'s in current container and update them according to current property specifications; if there are no `matchByVal`'s (i.e., "U*":`{}`), all items are selected
+- **Description:** update multiple child items of current container; this `Command` is only valid for container-type items; select all items that match all `matchByVal`'s in current container and update them according to current property specifications; if there are no `matchByVal`'s (i.e., "U*":
+```json
+{}
+```
+), all items are selected
 
 ### `Command`
 
 - **Grammar:** `"!updateDeep":{(<<matchByVal>>(,<<matchByVal>>)*)?}`
 - **Shorthand:** `"U\*\*":{(<<matchByVal>>(,<<matchByVal>>)*)?}`
 - **Required:** Requireable
-- **Description:** Update multiple descendants of current container, recursively; this `Command` is only valid for container-type items; select all items that match all `matchByVal`'s in current container and all its children, recursively, and update them according to current property specifications; if there are no `matchByVal`'s (i.e., "U**":`{}`), all items are selected
+- **Description:** Update multiple descendants of current container, recursively; this `Command` is only valid for container-type items; select all items that match all `matchByVal`'s in current container and all its children, recursively, and update them according to current property specifications; if there are no `matchByVal`'s (i.e., "U**":
+```json
+{}
+```
+), all items are selected
 
 ### `uiDirective`
 
@@ -732,7 +816,23 @@
 - **Grammar:** `"~request":[(<<req>>(,<<req>>)*)?]`
 - **Shorthand:** `"R":[(<<req>>(,<<req>>)*)?]`
 - **Required:** Requireable
-- **Description:** Request info; [(`req`(,`req`)*)?] describes the information to be sent back to application software; if no specific information is requested (i.e., "R":[]), a message with `userProp` "r" is still returned (e.g., APP->UI message `{"R":[]}` will be ensued by UI->APP message `{"t":<<ums>>,"r":{}}`); for items that have children, `req` "v" returns the child array in accordance with the display object-model (e.g., APP->UI message `{"v":["hello",12],"R":["v"]}` will be ensued by UI->APP message `{"t":<<ums>>,"r":{"v":[{"c":"txt","v":"hello"},{"c":"num","v":12}]}}`); if `req` information is unavailable, the UI->APP message must include `req`:null for the corresponding `req` (i.e., every requested `req` text must be included as a key in the ensuing UI->APP message, even if it's not a known name of a property)
+- **Description:** Request info; [(`req`(,`req`)*)?] describes the information to be sent back to application software; if no specific information is requested (i.e., "R":[]), a message with `userProp` "r" is still returned (e.g., APP->UI message 
+```json
+{"R":[]}
+```
+ will be ensued by UI->APP message 
+```json
+{"t":<<ums>>,"r":{}}
+```
+); for items that have children, `req` "v" returns the child array in accordance with the display object-model (e.g., APP->UI message 
+```json
+{"v":["hello",12],"R":["v"]}
+```
+ will be ensued by UI->APP message 
+```json
+{"t":<<ums>>,"r":{"v":[{"c":"txt","v":"hello"},{"c":"num","v":12}]}}
+```
+); if `req` information is unavailable, the UI->APP message must include `req`:null for the corresponding `req` (i.e., every requested `req` text must be included as a key in the ensuing UI->APP message, even if it's not a known name of a property)
 
 ### `Command`
 
@@ -759,21 +859,45 @@
 - **Grammar:** `"Class":<<itemClass>>`
 - **Shorthand:** `"c":<<itemClass>>`
 - **Required:** Always
-- **Description:** class of UI component (i.e., widget type); if "c" `property` is not specified, it will be automatically derived from value type (i.e., if `property` "v" is an array, a number, a boolean, or text, `itemClass` will be automatically set to "bin", "num", "btn", or "txt", respectively); if neither "c" nor "v" properties are specified, default component class is "bin" (i.e., [`{"id":<<id>>}`] is equivalent to [`{"id":<<id>>,"c":"bin"}`]); item class is tied to item value type (i.e. array, text, number, or boolean), such that "c" `property` will change if "v" `property` is set to an incompatible value, and vice versa (see "v" `property` description for more detail); this property cannot be set for root container
+- **Description:** class of UI component (i.e., widget type); if "c" `property` is not specified, it will be automatically derived from value type (i.e., if `property` "v" is an array, a number, a boolean, or text, `itemClass` will be automatically set to "bin", "num", "btn", or "txt", respectively); if neither "c" nor "v" properties are specified, default component class is "bin" (i.e., [
+```json
+{"id":<<id>>}
+```
+] is equivalent to [
+```json
+{"id":<<id>>,"c":"bin"}
+```
+]); item class is tied to item value type (i.e. array, text, number, or boolean), such that "c" `property` will change if "v" `property` is set to an incompatible value, and vice versa (see "v" `property` description for more detail); this property cannot be set for root container
 
 ### `property`
 
 - **Grammar:** `"id":<<id>>`
 - **Shorthand:** `"id":<<id>>`
 - **Required:** Always
-- **Description:** item id; root-level container has no "id" attribute ("id":null); item `id` will be displayed as item caption/title (see `property` "cap" below for alternate behavior); WARNING: "id" uniqueness within a given container is up to APP software, and if two items in the same container have the same "id", (1) updating them via "U" command becomes problematic, and (2) user interactions with these items may be indistinguishable (e.g., APP->UI message `{"A":[{"id":"click me","v":false},{"id":"click me","v":false}]}` will add two "click me" buttons to display, and when user clicks either of them, the UI->APP messages will be indistinguishable, either one reading `{"t":<<ums>>,"u":"click me","v":true}`)
+- **Description:** item id; root-level container has no "id" attribute ("id":null); item `id` will be displayed as item caption/title (see `property` "cap" below for alternate behavior); WARNING: "id" uniqueness within a given container is up to APP software, and if two items in the same container have the same "id", (1) updating them via "U" command becomes problematic, and (2) user interactions with these items may be indistinguishable (e.g., APP->UI message 
+```json
+{"A":[{"id":"click me","v":false},{"id":"click me","v":false}]}
+```
+ will add two "click me" buttons to display, and when user clicks either of them, the UI->APP messages will be indistinguishable, either one reading 
+```json
+{"t":<<ums>>,"u":"click me","v":true}
+```
+)
 
 ### `property`
 
 - **Grammar:** `"value":<<container>>|<<value>>`
 - **Shorthand:** `"v":<<container>>|<<value>>`
 - **Required:** Always
-- **Description:** set item value; setting "v" to null removes the item from display; "v" is a special property whose value type always corresponds to UI component class (i.e., "v" numeric and text values indicate numeric and text UI components, boolean values indicate buttons, and an array indicates a container bin), so changing "v" `property` to a different value type will also change the UI component accordingly (e.g., APP->UI message [`{"id":"X","v":3.14}`] will add a numeric item X whose value is 3.14 to display, and a follow-up APP->UI message `{"U":"X","v":"Pi"}` will change the component from a numeric to a text element that says "Pi")
+- **Description:** set item value; setting "v" to null removes the item from display; "v" is a special property whose value type always corresponds to UI component class (i.e., "v" numeric and text values indicate numeric and text UI components, boolean values indicate buttons, and an array indicates a container bin), so changing "v" `property` to a different value type will also change the UI component accordingly (e.g., APP->UI message [
+```json
+{"id":"X","v":3.14}
+```
+] will add a numeric item X whose value is 3.14 to display, and a follow-up APP->UI message 
+```json
+{"U":"X","v":"Pi"}
+```
+ will change the component from a numeric to a text element that says "Pi")
 
 ### `property`
 
@@ -961,7 +1085,19 @@
 - **Grammar:** `"input":0|1`
 - **Shorthand:** `"in":0|1`
 - **Required:** Requireable
-- **Description:** interactive/input flag to signify whether user-input is disabled or enabled; item classes that can be interactive include all items whose value is `boolean` ("btn", "opt", "hold"), whose value is `number` ("num", "dt", "time"), and whose value is `text` ("txt", "rgb", "math", "doc"); "in":0 (default for `itemClass` "num", "dt", "time", "txt", "math", "rgb", "doc") signifies input is disabled, and "in":1 (default for `itemClass` "btn", "hold", "opt") signifies input is enabled; enabling user input means that the user can toggle item value (`property` "v"), and when user updates item value, UI software will send a UI->APP message that would look as such: `{"t":<<ums>>,"u":<<uid>>,"v":<<value>>}`; `itemClass` "txt" must include a newline in the value to enable multi-line input (e.g. [`{"id":"name","v":"","in":1}`,`{"id":"story","v":"\n","in":1}`] creates a single-line text input field called "name" and a multi-line one called "story"); WARNING: when building computational agents to interact with UINL apps, never try to interact with disabled controls, because application code is not be expecting any interactions from those controls, and such interactions may be ignored or may cause unexpected behavior
+- **Description:** interactive/input flag to signify whether user-input is disabled or enabled; item classes that can be interactive include all items whose value is `boolean` ("btn", "opt", "hold"), whose value is `number` ("num", "dt", "time"), and whose value is `text` ("txt", "rgb", "math", "doc"); "in":0 (default for `itemClass` "num", "dt", "time", "txt", "math", "rgb", "doc") signifies input is disabled, and "in":1 (default for `itemClass` "btn", "hold", "opt") signifies input is enabled; enabling user input means that the user can toggle item value (`property` "v"), and when user updates item value, UI software will send a UI->APP message that would look as such: 
+```json
+{"t":<<ums>>,"u":<<uid>>,"v":<<value>>}
+```
+; `itemClass` "txt" must include a newline in the value to enable multi-line input (e.g. [
+```json
+{"id":"name","v":"","in":1}
+```
+,
+```json
+{"id":"story","v":"\n","in":1}
+```
+] creates a single-line text input field called "name" and a multi-line one called "story"); WARNING: when building computational agents to interact with UINL apps, never try to interact with disabled controls, because application code is not be expecting any interactions from those controls, and such interactions may be ignored or may cause unexpected behavior
 
 ### `interactProp`
 
@@ -996,7 +1132,15 @@
 - **Grammar:** `"onContext":<<contextMenu>>`
 - **Shorthand:** `"onctx":<<contextMenu>>`
 - **Required:** Requireable
-- **Description:** context menu event listener and action; `contextMenu` describes an item with `itemClass` "ctx" to be added to display (in root container) whenever this item is right-clicked (or long-tapped or some other method provided by current system to bring up context menu); the context menu is drawn hovering above other content, aligned to current item (usually at location of pointer), and is automatically deleted from display when this item loses focus or when one of its inputs is edited or toggled; every item inside a "ctx" container is a button (i.e., "Class":"btn") by default (use "defaults" property for alternate behavior); in addition to `contextMenu` being added to display, UI->APP message `{"t":<<ums>>,"u":<<uid>>,"ctx":[<<xy>>?]}` will be sent; this `contextMenu` will also be displayed whenever the APP->UI message simulates a context-menu event for this item via a "ctx":[`xy`?] command; "onContext":`contextMenu` behavior can also be accomplished with `interactProp` "on":["ctx"] with an additional trigger setup `{"!trigger":{"u":<<uid>>,"ctx":{}},"~add":[<<contextMenu>>]}`
+- **Description:** context menu event listener and action; `contextMenu` describes an item with `itemClass` "ctx" to be added to display (in root container) whenever this item is right-clicked (or long-tapped or some other method provided by current system to bring up context menu); the context menu is drawn hovering above other content, aligned to current item (usually at location of pointer), and is automatically deleted from display when this item loses focus or when one of its inputs is edited or toggled; every item inside a "ctx" container is a button (i.e., "Class":"btn") by default (use "defaults" property for alternate behavior); in addition to `contextMenu` being added to display, UI->APP message 
+```json
+{"t":<<ums>>,"u":<<uid>>,"ctx":[<<xy>>?]}
+```
+ will be sent; this `contextMenu` will also be displayed whenever the APP->UI message simulates a context-menu event for this item via a "ctx":[`xy`?] command; "onContext":`contextMenu` behavior can also be accomplished with `interactProp` "on":["ctx"] with an additional trigger setup 
+```json
+{"!trigger":{"u":<<uid>>,"ctx":{}},"~add":[<<contextMenu>>]}
+```
+
 
 ### `interactProp`
 
@@ -1031,42 +1175,70 @@
 - **Grammar:** `"foldable":0|1|2`
 - **Shorthand:** `"fold":0|1|2`
 - **Required:** Requireable
-- **Description:** container is foldable/minimizable; works for any container except root container; "fold":0 (default) is the absence of any fold control, "fold":1 means that item is fully visible, but has a fold control (i.e. a button that minimizes the item), and "fold":2 means that item is folded (i.e. minimized) and has a control that would unfold it; UI->APP message `{"t":<<ums>>,"u":<<uid>>,"fold":1}` or `{"t":<<ums>>,"u":<<uid>>,"fold":2}` is sent when container is folded/unfolded; avoid marking items foldable as an arbitrary style choice -- rather, mark an item as folded/foldable to signify reduced prominence of this item's content (as compared to items that are always in full view); WARNING: when building computational agents to interact with UINL apps, treat "fold":2 containers as if they had all their controls disabled, because application code may not be expecting any interactions from controls in a folded container
+- **Description:** container is foldable/minimizable; works for any container except root container; "fold":0 (default) is the absence of any fold control, "fold":1 means that item is fully visible, but has a fold control (i.e. a button that minimizes the item), and "fold":2 means that item is folded (i.e. minimized) and has a control that would unfold it; UI->APP message 
+```json
+{"t":<<ums>>,"u":<<uid>>,"fold":1}
+```
+ or 
+```json
+{"t":<<ums>>,"u":<<uid>>,"fold":2}
+```
+ is sent when container is folded/unfolded; avoid marking items foldable as an arbitrary style choice -- rather, mark an item as folded/foldable to signify reduced prominence of this item's content (as compared to items that are always in full view); WARNING: when building computational agents to interact with UINL apps, treat "fold":2 containers as if they had all their controls disabled, because application code may not be expecting any interactions from controls in a folded container
 
 ### `interactProp`
 
 - **Grammar:** `"closeable":1`
 - **Shorthand:** `"cls":1`
 - **Required:** Requireable
-- **Description:** close functionality; enable user to close (i.e., remove from display) current container (e.g., has a button, usually ❌, that closes current container when clicked); works for any container except root container; when item is closed, UI->APP message will be sent `{"t":<<ums>>,"u":<<uid>>,"v":null}`, where `uid` refers to this container
+- **Description:** close functionality; enable user to close (i.e., remove from display) current container (e.g., has a button, usually ❌, that closes current container when clicked); works for any container except root container; when item is closed, UI->APP message will be sent 
+```json
+{"t":<<ums>>,"u":<<uid>>,"v":null}
+```
+, where `uid` refers to this container
 
 ### `interactProp`
 
 - **Grammar:** `"deletable":1`
 - **Shorthand:** `"del":1`
 - **Required:** Requireable
-- **Description:** delete functionality; enable user to delete (i.e., remove from display) current item (e.g., has a button like ❌ or 🗑, that deletes current item when clicked); works for any item that is not a container; when item is deleted, UI->APP message will be sent `{"t":<<ums>>,"u":<<uid>>,"v":null}`
+- **Description:** delete functionality; enable user to delete (i.e., remove from display) current item (e.g., has a button like ❌ or 🗑, that deletes current item when clicked); works for any item that is not a container; when item is deleted, UI->APP message will be sent 
+```json
+{"t":<<ums>>,"u":<<uid>>,"v":null}
+```
+
 
 ### `interactProp`
 
 - **Grammar:** `"reorderable":1`
 - **Shorthand:** `"ro":1`
 - **Required:** Requireable
-- **Description:** re-order functionality; enable user to reorder items in current container; when user is done reordering a given item, UI->APP message `{"t":<<ums>>,"u":<<uid>>,"i":<<uint>>}` is sent
+- **Description:** re-order functionality; enable user to reorder items in current container; when user is done reordering a given item, UI->APP message 
+```json
+{"t":<<ums>>,"u":<<uid>>,"i":<<uint>>}
+```
+ is sent
 
 ### `interactProp`
 
 - **Grammar:** `"movable":[<<uid>>(,<<uid>>)*]`
 - **Shorthand:** `"mv":[<<uid>>(,<<uid>>)*]`
 - **Required:** Requireable
-- **Description:** enable user to be able to move (e.g. drag and drop) current item into another container; when user is done moving a given item, UI->APP message `{"t":<<ums>>,"u":<<uid>>,"m":<<uid>>}` is sent; when item is moved, it becomes the last item in target container (see `interactProp` "ro":1 for alternate behavior)
+- **Description:** enable user to be able to move (e.g. drag and drop) current item into another container; when user is done moving a given item, UI->APP message 
+```json
+{"t":<<ums>>,"u":<<uid>>,"m":<<uid>>}
+```
+ is sent; when item is moved, it becomes the last item in target container (see `interactProp` "ro":1 for alternate behavior)
 
 ### `interactProp`
 
 - **Grammar:** `"movableDeep":[<<uid>>(,<<uid>>)*]`
 - **Shorthand:** `"mv\*":[<<uid>>(,<<uid>>)*]`
 - **Required:** Requireable
-- **Description:** enable user to be able to move (e.g. drag and drop) current item into another container, or into any of its descendant containers; when user is done moving a given item, UI->APP message `{"t":<<ums>>,"u":<<uid>>,"m":<<uid>>}` is sent; when item is moved, it becomes the last item in target container (see `interactProp` "ro":1 for alternate behavior)
+- **Description:** enable user to be able to move (e.g. drag and drop) current item into another container, or into any of its descendant containers; when user is done moving a given item, UI->APP message 
+```json
+{"t":<<ums>>,"u":<<uid>>,"m":<<uid>>}
+```
+ is sent; when item is moved, it becomes the last item in target container (see `interactProp` "ro":1 for alternate behavior)
 
 ### `interactProp`
 
@@ -1086,7 +1258,19 @@
 - **Grammar:** `"defaults":<<qUpdate>>`
 - **Shorthand:** `"df":<<qUpdate>>`
 - **Required:** Requireable
-- **Description:** default template for descendant element creation; a child container can override some or all default properties with its own "df" specification (note: df inheritance is *shallow*, such that a container that is overriding any part of a property's default value overrides the entire default value for that property); default template cannot include "id"; if a default template includes item value, the value can never be an array (for safety reasons, to prevent infinite loops); defaults are never applied when such application might be illegal (e.g., `{"A":[{"c":"grid","df":{"c":"num"}}]}` adds a grid to display whose cell class types will be "num" by default, but grid rows will still be of class type "bin" because only "bin" items are allowed as children of "grid"); if default template includes "c", it is only applied to children whose "v" property isn't declared, or is compatible (e.g. class "opt" is only compatible with boolean values, so `{"df":{"c":"opt"},"v":["hello","world",{"id":"a"},{"id":"b","v":false}]}` will add two text items, "hello" and "world", and two selectable options "a" and "b"); if default template includes "v", it is only applied to children whose "c" property isn't declared, or is compatible (e.g. class "opt" is only compatible with boolean values, so `{"df":{"v":true},"v":[{"id":"a","c":"opt"},{"id":"b","c":"num"}]}` will add a selectable option item "a" with a value of true, and a numeric item "b" with a default numeric value (0))
+- **Description:** default template for descendant element creation; a child container can override some or all default properties with its own "df" specification (note: df inheritance is *shallow*, such that a container that is overriding any part of a property's default value overrides the entire default value for that property); default template cannot include "id"; if a default template includes item value, the value can never be an array (for safety reasons, to prevent infinite loops); defaults are never applied when such application might be illegal (e.g., 
+```json
+{"A":[{"c":"grid","df":{"c":"num"}}]}
+```
+ adds a grid to display whose cell class types will be "num" by default, but grid rows will still be of class type "bin" because only "bin" items are allowed as children of "grid"); if default template includes "c", it is only applied to children whose "v" property isn't declared, or is compatible (e.g. class "opt" is only compatible with boolean values, so 
+```json
+{"df":{"c":"opt"},"v":["hello","world",{"id":"a"},{"id":"b","v":false}]}
+```
+ will add two text items, "hello" and "world", and two selectable options "a" and "b"); if default template includes "v", it is only applied to children whose "c" property isn't declared, or is compatible (e.g. class "opt" is only compatible with boolean values, so 
+```json
+{"df":{"v":true},"v":[{"id":"a","c":"opt"},{"id":"b","c":"num"}]}
+```
+ will add a selectable option item "a" with a value of true, and a numeric item "b" with a default numeric value (0))
 
 ### `binProp`
 
@@ -1111,7 +1295,23 @@
 
 - **Grammar:** `"step":<<number>>`
 - **Required:** Requireable
-- **Description:** step for current numeric value; `number` must be greater than zero; rounds displayable to nearest multiple of `number` (e.g., both `{"v":1.75,"step":2}` and `{"v":2.15,"step":2}` will be displayed as 2); if `numProp` "min" is present, valid values begin at "min" (e.g. `{"c":"num","min":1,"step":2}` is a numeric item that only displays odd positive integers), otherwise they begin at 0 and go in both directions (e.g., `{"c":"num","step":2}` is a numeric item that only displays even integers)
+- **Description:** step for current numeric value; `number` must be greater than zero; rounds displayable to nearest multiple of `number` (e.g., both 
+```json
+{"v":1.75,"step":2}
+```
+ and 
+```json
+{"v":2.15,"step":2}
+```
+ will be displayed as 2); if `numProp` "min" is present, valid values begin at "min" (e.g. 
+```json
+{"c":"num","min":1,"step":2}
+```
+ is a numeric item that only displays odd positive integers), otherwise they begin at 0 and go in both directions (e.g., 
+```json
+{"c":"num","step":2}
+```
+ is a numeric item that only displays even integers)
 
 ### `numProp`
 
@@ -1145,7 +1345,11 @@
 - **Grammar:** `"format":<<format>>`
 - **Shorthand:** `"fmt":<<format>>`
 - **Required:** Requireable
-- **Description:** format type for "txt" and "doc" components; if certain markup format is required for "doc" components, or certain syntax highlighting is required for "txt" components, app software should check that UI software can handle these via the "!!require" directive (e.g. `{"!!require":{"fmt":[".md",".csv"]}}` ensures that markdown format is supported for "doc" components and that CSV syntax highlighting is supported for "txt" components)
+- **Description:** format type for "txt" and "doc" components; if certain markup format is required for "doc" components, or certain syntax highlighting is required for "txt" components, app software should check that UI software can handle these via the "!!require" directive (e.g. 
+```json
+{"!!require":{"fmt":[".md",".csv"]}}
+```
+ ensures that markdown format is supported for "doc" components and that CSV syntax highlighting is supported for "txt" components)
 
 ### `fileProp`
 
@@ -1177,14 +1381,22 @@
 - **Grammar:** `"optionGroup":<<text>>`
 - **Shorthand:** `"grp":<<text>>`
 - **Required:** Requireable
-- **Description:** option group; if this property is present (not null), the "opt" item belongs to a group (named via `text`) where only one item can be selected at a time (e.g. radio-buttons, where selecting one button deselects previously selected item in the same group); when a new item in group is selected, a previously selected item in this group is automatically deselected (setting its value to false), but does *NOT* send a UI->APP `{..."v":false...}` message (i.e., its deselection will be presumed by app software because it's in the same "grp" as the newly selected item)
+- **Description:** option group; if this property is present (not null), the "opt" item belongs to a group (named via `text`) where only one item can be selected at a time (e.g. radio-buttons, where selecting one button deselects previously selected item in the same group); when a new item in group is selected, a previously selected item in this group is automatically deselected (setting its value to false), but does *NOT* send a UI->APP 
+```json
+{..."v":false...}
+```
+ message (i.e., its deselection will be presumed by app software because it's in the same "grp" as the newly selected item)
 
 ### `holdProp`
 
 - **Grammar:** `"holdGroup":<<text>>`
 - **Shorthand:** `"hgrp":<<text>>`
 - **Required:** Requireable
-- **Description:** hold-button group; if this property is present (not null), the "hold" item belongs to a group (named via `text`) where, once one of the "hold" buttons is pressed down, moving pointer/mouse over another "hold" item in the same group (without stopping the press-down action) will automatically press down (set value to true) that item; when a new holddown button is selected in this way, the previously selected button will be automatically deselected, but may *NOT* send a UI->APP `{..."v":false...}` message (i.e., its deselection will be presumed by app software because it's in the same "hgrp" as the newly selected item)
+- **Description:** hold-button group; if this property is present (not null), the "hold" item belongs to a group (named via `text`) where, once one of the "hold" buttons is pressed down, moving pointer/mouse over another "hold" item in the same group (without stopping the press-down action) will automatically press down (set value to true) that item; when a new holddown button is selected in this way, the previously selected button will be automatically deselected, but may *NOT* send a UI->APP 
+```json
+{..."v":false...}
+```
+ message (i.e., its deselection will be presumed by app software because it's in the same "hgrp" as the newly selected item)
 
 ### `ctxProp`
 
@@ -1246,7 +1458,11 @@
 - **Grammar:** `"format":<<format>>`
 - **Shorthand:** `"fmt":<<format>>`
 - **Required:** Requireable
-- **Description:** format type for "media" components; if certain media types are required for "media" components, app software should check that UI software can handle these via the "!!require" directive (e.g. `{"!!require":{"fmt":[".mp3","youtube.com",".md"]}}` ensures mp3's and youtube videos can be embedded and controlled as "media" components, and that markdown syntax is supported for "doc" components)
+- **Description:** format type for "media" components; if certain media types are required for "media" components, app software should check that UI software can handle these via the "!!require" directive (e.g. 
+```json
+{"!!require":{"fmt":[".mp3","youtube.com",".md"]}}
+```
+ ensures mp3's and youtube videos can be embedded and controlled as "media" components, and that markdown syntax is supported for "doc" components)
 
 ### `mediaProp`
 
@@ -1473,25 +1689,57 @@
 
 - **Grammar:** `"bin"`
 - **Required:** Always
-- **Description:** container item; this item's value property "v" can only ever be `container`; if "v" property isn't specified, it is set to [] (i.e., this is the default `container` component class -- `{"add":[{"id":<<id>>,"c":"bin"}]}` is equivalent to `{"add":[{"id":<<id>>,"v":[]}]}`); even if "bin" is empty, human-facing UI software should attempt to display it in some way (e.g., as a spacer), so as to make the human-user experience as close as possible to what AI would experience
+- **Description:** container item; this item's value property "v" can only ever be `container`; if "v" property isn't specified, it is set to [] (i.e., this is the default `container` component class -- 
+```json
+{"add":[{"id":<<id>>,"c":"bin"}]}
+```
+ is equivalent to 
+```json
+{"add":[{"id":<<id>>,"v":[]}]}
+```
+); even if "bin" is empty, human-facing UI software should attempt to display it in some way (e.g., as a spacer), so as to make the human-user experience as close as possible to what AI would experience
 
 ### `itemClass`
 
 - **Grammar:** `"txt"`
 - **Required:** Always
-- **Description:** text item; this item's value property "v" can only ever be `text`; if "v" property isn't specified, it is set to "" (i.e., "" is the default `text` component class -- `{"add":[{"id":<<id>>,"c":"txt"}]}` is equivalent to `{"add":[{"id":<<id>>,"v":""}]}`
+- **Description:** text item; this item's value property "v" can only ever be `text`; if "v" property isn't specified, it is set to "" (i.e., "" is the default `text` component class -- 
+```json
+{"add":[{"id":<<id>>,"c":"txt"}]}
+```
+ is equivalent to 
+```json
+{"add":[{"id":<<id>>,"v":""}]}
+```
+
 
 ### `itemClass`
 
 - **Grammar:** `"num"`
 - **Required:** Always
-- **Description:** numeric item; this item's value property "v" can only ever be `number`; if "v" property isn't specified, it is set to 0 (i.e., 0 is the default `number` component class -- `{"add":[{"id":<<id>>,"c":"num"}]}` is equivalent to `{"add":[{"id":<<id>>,"v":0}]}`)
+- **Description:** numeric item; this item's value property "v" can only ever be `number`; if "v" property isn't specified, it is set to 0 (i.e., 0 is the default `number` component class -- 
+```json
+{"add":[{"id":<<id>>,"c":"num"}]}
+```
+ is equivalent to 
+```json
+{"add":[{"id":<<id>>,"v":0}]}
+```
+)
 
 ### `itemClass`
 
 - **Grammar:** `"btn"`
 - **Required:** Always
-- **Description:** button item; this item's value property "v" can only ever be `boolean`; if "v" property isn't specified, it is set to false (i.e., false is the default `boolean` component class -- `{"add":[{"id":<<id>>,"c":"btn"}]}` is equivalent to `{"add":[{"id":<<id>>,"v":false}]}`)
+- **Description:** button item; this item's value property "v" can only ever be `boolean`; if "v" property isn't specified, it is set to false (i.e., false is the default `boolean` component class -- 
+```json
+{"add":[{"id":<<id>>,"c":"btn"}]}
+```
+ is equivalent to 
+```json
+{"add":[{"id":<<id>>,"v":false}]}
+```
+)
 
 ### `itemClass`
 
@@ -1515,7 +1763,11 @@
 
 - **Grammar:** `"dt"`
 - **Required:** Requireable
-- **Description:** this item is a datetime field -- a special `number` item whose value represents number of seconds since epoch; default value for this item is current datetime (e.g., an APP->UI message `{"A":[{"c":"dt"}]}` received on 04/08/2021 at 07:11:23.364 PM (localtime) will be instantiated with the value 1617909083.364, thus displaying date/time 2021-04-08 07:11:23.364 PM); use `numProp` "step" to control datetime precision (e.g., use "step":60 to exclude seconds, "step":86400 to exclude time (just show the date), or "step":1 to exclude milliseconds); use `numProp` "unit" to provide context for current timestamp (e.g., timezone)
+- **Description:** this item is a datetime field -- a special `number` item whose value represents number of seconds since epoch; default value for this item is current datetime (e.g., an APP->UI message 
+```json
+{"A":[{"c":"dt"}]}
+```
+ received on 04/08/2021 at 07:11:23.364 PM (localtime) will be instantiated with the value 1617909083.364, thus displaying date/time 2021-04-08 07:11:23.364 PM); use `numProp` "step" to control datetime precision (e.g., use "step":60 to exclude seconds, "step":86400 to exclude time (just show the date), or "step":1 to exclude milliseconds); use `numProp` "unit" to provide context for current timestamp (e.g., timezone)
 
 ### `itemClass`
 
@@ -1533,7 +1785,11 @@
 
 - **Grammar:** `"file"`
 - **Required:** Requireable
-- **Description:** this item is a file chooser - its a special `text` item whose "input" property is 1 by default (i.e., interactive by default), and whose value is set after user chooses some file(s); by default file-chooser only allows choosing a single file, and after the user chooses a file from their storage device a UI->APP message `{"t":<<ums>>,"u":<<uid>>,"v":<<base64>>}` is sent, where `base64` is the base64 representation of file contents (for alternate behavior, see `fileProp` "accepts"); if `interactProp` "go":1 is used for this item, the UI->APP message with file contents is not sent until after the "go" button is clicked
+- **Description:** this item is a file chooser - its a special `text` item whose "input" property is 1 by default (i.e., interactive by default), and whose value is set after user chooses some file(s); by default file-chooser only allows choosing a single file, and after the user chooses a file from their storage device a UI->APP message 
+```json
+{"t":<<ums>>,"u":<<uid>>,"v":<<base64>>}
+```
+ is sent, where `base64` is the base64 representation of file contents (for alternate behavior, see `fileProp` "accepts"); if `interactProp` "go":1 is used for this item, the UI->APP message with file contents is not sent until after the "go" button is clicked
 
 ### `itemClass`
 
@@ -1551,19 +1807,31 @@
 
 - **Grammar:** `"ctx"`
 - **Required:** Requireable
-- **Description:** this item is a context menu -- a special `container` that is drawn hovering above other content, and is automatically deleted from display when this item loses focus or when one of its inputs is edited or toggled; every item inside a "ctx" container is a button (i.e., "Class":"btn") by default (use "defaults" property for alternate behavior); if "ctx" item is destroyed as a result of losing focus, a UI->APP message `{"t":<<ums>>,"u":<<uid>>,"v":null}` is sent
+- **Description:** this item is a context menu -- a special `container` that is drawn hovering above other content, and is automatically deleted from display when this item loses focus or when one of its inputs is edited or toggled; every item inside a "ctx" container is a button (i.e., "Class":"btn") by default (use "defaults" property for alternate behavior); if "ctx" item is destroyed as a result of losing focus, a UI->APP message 
+```json
+{"t":<<ums>>,"u":<<uid>>,"v":null}
+```
+ is sent
 
 ### `itemClass`
 
 - **Grammar:** `"win"`
 - **Required:** Requireable
-- **Description:** this item is a window/popup -- a special `container` that floats freely in its parent container (potentially obscuring view of what's behind it); "win" container position does not cause reflow of its siblings; by default "win" containers do not block interaction with other visible items on display (see "mod" `winProp` for alternate behavior); "win" container is able to receive focus (e.g. when it or one of its child items is clicked), and when it does this "win" container's stack-order index (`property` "i") is automatically increased maximally (i.e., it becomes last item in its parent container, and thus the top-most item, unobscured by other items); use `interactProp` "on":`{"fcs":[]}` to subscribe to "win" focus in/out events; when this container has no "mod":1 `winProp`, human-facing UI software is responsible for enabling interaction with sibling items that may be obscured by this container (this may be done by making "win" item draggable/resizable, via a keyboard shortcut or a toolbar, and/or any other method)
+- **Description:** this item is a window/popup -- a special `container` that floats freely in its parent container (potentially obscuring view of what's behind it); "win" container position does not cause reflow of its siblings; by default "win" containers do not block interaction with other visible items on display (see "mod" `winProp` for alternate behavior); "win" container is able to receive focus (e.g. when it or one of its child items is clicked), and when it does this "win" container's stack-order index (`property` "i") is automatically increased maximally (i.e., it becomes last item in its parent container, and thus the top-most item, unobscured by other items); use `interactProp` "on":
+```json
+{"fcs":[]}
+```
+ to subscribe to "win" focus in/out events; when this container has no "mod":1 `winProp`, human-facing UI software is responsible for enabling interaction with sibling items that may be obscured by this container (this may be done by making "win" item draggable/resizable, via a keyboard shortcut or a toolbar, and/or any other method)
 
 ### `itemClass`
 
 - **Grammar:** `"one"`
 - **Required:** Requireable
-- **Description:** this item is a container with one child whose content is visible and other children whose content is hidden (usually represented to humans as tabs, accordion, or a carousel) -- a special `container` whose children are all "bin" class items with `containerProp` "fold", where one child has `containerProp` "fold":1 and the rest of the children have `containerProp` "fold":2; by default the first "one" child has `containerProp` "fold":1 and the rest of the children have `containerProp` "fold":2; setting any "one" child `containerProp` "fold":1 will automatically set the rest of the children to "fold":2; user does not have the control to set "fold":2 for any "one" child (cannot hide a visible child), but can set "fold":1 (can show a specific child, thus automatically hiding other children); no UI->APP message is sent when a container in "one" is folded/unfolded (use `interactProp` "on":`{"fold":[1]}` to subscribe to unfold events for each child of "one")
+- **Description:** this item is a container with one child whose content is visible and other children whose content is hidden (usually represented to humans as tabs, accordion, or a carousel) -- a special `container` whose children are all "bin" class items with `containerProp` "fold", where one child has `containerProp` "fold":1 and the rest of the children have `containerProp` "fold":2; by default the first "one" child has `containerProp` "fold":1 and the rest of the children have `containerProp` "fold":2; setting any "one" child `containerProp` "fold":1 will automatically set the rest of the children to "fold":2; user does not have the control to set "fold":2 for any "one" child (cannot hide a visible child), but can set "fold":1 (can show a specific child, thus automatically hiding other children); no UI->APP message is sent when a container in "one" is folded/unfolded (use `interactProp` "on":
+```json
+{"fold":[1]}
+```
+ to subscribe to unfold events for each child of "one")
 
 ### `itemClass`
 
@@ -1641,7 +1909,11 @@
 
 - **Grammar:** `"l"`
 - **Required:** Requireable
-- **Description:** this item is a line/link in a "2d" or "3d" graphical container -- a terminating item inside a "gr" container; the value property of "l" items is a partial `uid` of another item within this "2d" or "3d" graph -- it specifies a unique path to another item within this item's root "2d" or "3d" graph container; if this item has no value, it links to its parent "gr" item's next sibling, if one exists (i.e., APP->UI message `{"A":[{"c":"2d","w":50,"h":50,"df":{"v":[{}]},"v":[{"x":10,"y":10},{"x":25,"y":40},{"x":40,"y":10}]}]}` will draw a V shape with vertices at (10,10), (25,40), and (40,10))
+- **Description:** this item is a line/link in a "2d" or "3d" graphical container -- a terminating item inside a "gr" container; the value property of "l" items is a partial `uid` of another item within this "2d" or "3d" graph -- it specifies a unique path to another item within this item's root "2d" or "3d" graph container; if this item has no value, it links to its parent "gr" item's next sibling, if one exists (i.e., APP->UI message 
+```json
+{"A":[{"c":"2d","w":50,"h":50,"df":{"v":[{}]},"v":[{"x":10,"y":10},{"x":25,"y":40},{"x":40,"y":10}]}]}
+```
+ will draw a V shape with vertices at (10,10), (25,40), and (40,10))
 
 ## Details
 
@@ -1655,7 +1927,15 @@
 
 - **Grammar:** `<<value>>|<<container>>|<<pList>>`
 - **Required:** Always
-- **Description:** an `item` may be declared by value (`value` or `container`) or a list of properties (`pList`) (i.e., `{"v":["hello","world"]}` is shorthand for `{"v":[{"v":"hello"},{"v":"world"}]}`)
+- **Description:** an `item` may be declared by value (`value` or `container`) or a list of properties (`pList`) (i.e., 
+```json
+{"v":["hello","world"]}
+```
+ is shorthand for 
+```json
+{"v":[{"v":"hello"},{"v":"world"}]}
+```
+)
 
 ### `pList`
 
@@ -1691,7 +1971,19 @@
 
 - **Grammar:** `[<<id>>|<<index>>(,<<id>>|<<index>>)*]`
 - **Required:** Always
-- **Description:** a sequence of id's to search; a search by `ids` is equivalent to multiple nested searches for `id`|`index` (i.e., `{"U":["A","B","C"],...}` = `{"U":"A","Q":[{"U":["B","C"],...}]}` = `{"U":"A","Q":[{"U":"B","Q":[{"U:"C",...}]}]}`)
+- **Description:** a sequence of id's to search; a search by `ids` is equivalent to multiple nested searches for `id`|`index` (i.e., 
+```json
+{"U":["A","B","C"],...}
+```
+ = 
+```json
+{"U":"A","Q":[{"U":["B","C"],...}]}
+```
+ = 
+```json
+{"U":"A","Q":[{"U":"B","Q":[{"U:"C",...}]}]}
+```
+)
 
 ### `value`
 
@@ -1751,14 +2043,26 @@
 
 - **Grammar:** `<<propName>>:<<values>>`
 - **Required:** Requireable
-- **Description:** specify properties/commands (and property values) necessary for this application; for any `propName` where its value can be an array or associative array (e.g. "R", "on"), `values` specifies which names are allowed in said array, (e.g. `{"!!require":{"on":["k","pc"]}}` signifies that UI software must be able to capture/process key-down and click events)
+- **Description:** specify properties/commands (and property values) necessary for this application; for any `propName` where its value can be an array or associative array (e.g. "R", "on"), `values` specifies which names are allowed in said array, (e.g. 
+```json
+{"!!require":{"on":["k","pc"]}}
+```
+ signifies that UI software must be able to capture/process key-down and click events)
 
 ### `required`
 
 - **Grammar:** `"!async":[]`
 - **Shorthand:** `"&":[]`
 - **Required:** Requireable
-- **Description:** declare that app is asynchronous; if application software never sends the `uiDirective` "!!require"`{..."!async":[]...}` or "!!require"`{..."&":[]...}`, user-agent software will assume that message protocol is synchronous, such that each UI->APP message will be treated as a request by the application, and will be followed immediately by one, and only one, APP->UI response message
+- **Description:** declare that app is asynchronous; if application software never sends the `uiDirective` "!!require"
+```json
+{..."!async":[]...}
+```
+ or "!!require"
+```json
+{..."&":[]...}
+```
+, user-agent software will assume that message protocol is synchronous, such that each UI->APP message will be treated as a request by the application, and will be followed immediately by one, and only one, APP->UI response message
 
 ### `required`
 
@@ -1809,7 +2113,11 @@
 
 - **Grammar:** `<<templateName>>`
 - **Required:** Requireable
-- **Description:** template name, referring to an existing `template`; use `{"!!require":{..."!templates":[]...}}` to ensure that UI software can handle such `qUpdate`'s
+- **Description:** template name, referring to an existing `template`; use 
+```json
+{"!!require":{..."!templates":[]...}}
+```
+ to ensure that UI software can handle such `qUpdate`'s
 
 ### `userPropTrigger`
 
@@ -1886,7 +2194,11 @@
 
 - **Grammar:** `{}`
 - **Required:** Requireable
-- **Description:** wildcard non-null value; only for `Command`'s "U*":, "U**", "Tr", and `uiDirective` "task" -- use `{}` instead of `value` to match any non-null value in `matchByVal` and `userProp`
+- **Description:** wildcard non-null value; only for `Command`'s "U*":, "U**", "Tr", and `uiDirective` "task" -- use 
+```json
+{}
+```
+ instead of `value` to match any non-null value in `matchByVal` and `userProp`
 
 ### `tag`
 
@@ -1915,7 +2227,23 @@
 
 - **Grammar:** `<<number>>`
 - **Required:** Requireable
-- **Description:** gamepad button/axis id and current state; the whole part of `number` represents button/axis identifier (zero-indexed), and the fractional part of the number its state; for buttons: when fractional part is zero, the button is up, and when it is non-zero, then the button is down (e.g., if first two gamepad controls are buttons, then UI->APP message `{"t":<<ums>>,"g":[0.1,1]}` means that first button was pressed and the second was released); for axes: the fractional part relays axis state, where .1 is lowest value, .5 is midpoint, and .9 is the highest possible value (e.g., gamepad controls 2 and 3 are horizontal and vertical axes of a thumbstick, then UI->APP message `{"t":<<ums>>,"g":[2.1,3.5]}` means that the thumbstick is pointing left); when gamepad is connected and "g" event is subscribed to, UI->APP message with initial gamepad state is sent (e.g., if gamepad has four buttons and two thumbsticks, when it's connected and APP->UI message `{"on":{"g":[]}}` is sent, the ensuing UI->APP message would be `{"t":<<ums>>,"g":[0,1,2,3,4.5,5.5,6.5,7.5]}`)
+- **Description:** gamepad button/axis id and current state; the whole part of `number` represents button/axis identifier (zero-indexed), and the fractional part of the number its state; for buttons: when fractional part is zero, the button is up, and when it is non-zero, then the button is down (e.g., if first two gamepad controls are buttons, then UI->APP message 
+```json
+{"t":<<ums>>,"g":[0.1,1]}
+```
+ means that first button was pressed and the second was released); for axes: the fractional part relays axis state, where .1 is lowest value, .5 is midpoint, and .9 is the highest possible value (e.g., gamepad controls 2 and 3 are horizontal and vertical axes of a thumbstick, then UI->APP message 
+```json
+{"t":<<ums>>,"g":[2.1,3.5]}
+```
+ means that the thumbstick is pointing left); when gamepad is connected and "g" event is subscribed to, UI->APP message with initial gamepad state is sent (e.g., if gamepad has four buttons and two thumbsticks, when it's connected and APP->UI message 
+```json
+{"on":{"g":[]}}
+```
+ is sent, the ensuing UI->APP message would be 
+```json
+{"t":<<ums>>,"g":[0,1,2,3,4.5,5.5,6.5,7.5]}
+```
+)
 
 ### `key`
 
@@ -2206,20 +2534,32 @@
 - **Grammar:** `"request":[<<req>>(,<<req>>)*]`
 - **Shorthand:** `"r":[<<req>>(,<<req>>)*]`
 - **Required:** Requireable
-- **Description:** info about current item to send to app alongside "o" or "e" or "b" `userProp` upon overlap/collision; the requested info will be sent back via `userProp` "r":`{<<reqInfo>>(,<<reqInfo>>)*}`
+- **Description:** info about current item to send to app alongside "o" or "e" or "b" `userProp` upon overlap/collision; the requested info will be sent back via `userProp` "r":
+```json
+{<<reqInfo>>(,<<reqInfo>>)*}
+```
+
 
 ### `ovrOpt`
 
 - **Grammar:** `"request2":[<<req>>(,<<req>>)*]`
 - **Shorthand:** `"r2":[<<req>>(,<<req>>)*]`
 - **Required:** Requireable
-- **Description:** info about the other item involved in collision to send to app alongside "o" or "e" or "b" `userProp` upon overlap/collision, if that item is static (i.e., not animating/moving); if "r2+" `ovrOpt` is not specified, info specified here is also sent for non-static collision targets; the requested info will be sent back via `userProp` "r2":`{<<reqInfo>>(,<<reqInfo>>)*}`
+- **Description:** info about the other item involved in collision to send to app alongside "o" or "e" or "b" `userProp` upon overlap/collision, if that item is static (i.e., not animating/moving); if "r2+" `ovrOpt` is not specified, info specified here is also sent for non-static collision targets; the requested info will be sent back via `userProp` "r2":
+```json
+{<<reqInfo>>(,<<reqInfo>>)*}
+```
+
 
 ### `ovrOpt`
 
 - **Grammar:** `"r2\+":[<<req>>(,<<req>>)*]`
 - **Required:** Requireable
-- **Description:** info about the other item involved in collision to send to app alongside "o" or "e" or "b" `userProp` upon overlap/collision, if that other item is not static (i.e., animating/moving); default value for this `ovrOpt` is whatever the value is for "r" `ovrOpt`; the requested info will be sent back via `userProp` "r2":`{<<reqInfo>>(,<<reqInfo>>)*}`
+- **Description:** info about the other item involved in collision to send to app alongside "o" or "e" or "b" `userProp` upon overlap/collision, if that other item is not static (i.e., animating/moving); default value for this `ovrOpt` is whatever the value is for "r" `ovrOpt`; the requested info will be sent back via `userProp` "r2":
+```json
+{<<reqInfo>>(,<<reqInfo>>)*}
+```
+
 
 ### `overlapFunction`
 
@@ -2352,7 +2692,11 @@
 - **Grammar:** `"request":[<<req>>(,<<req>>)*]`
 - **Shorthand:** `"r":[<<req>>(,<<req>>)*]`
 - **Required:** Requireable
-- **Description:** info to send to app software (alongside `userProp` `animationVelocity`:"`number`") when animation reaches "min" or "max" value; the requested info will be sent back via `userProp` "r":`{<<reqInfo>>(,<<reqInfo>>)*}`
+- **Description:** info to send to app software (alongside `userProp` `animationVelocity`:"`number`") when animation reaches "min" or "max" value; the requested info will be sent back via `userProp` "r":
+```json
+{<<reqInfo>>(,<<reqInfo>>)*}
+```
+
 
 ## Task Instructions Grammar
 
