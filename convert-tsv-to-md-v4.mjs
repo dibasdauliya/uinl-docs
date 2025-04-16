@@ -96,13 +96,22 @@ dataRows.forEach((row) => {
 Object.entries(groupedByType).forEach(([type, rows]) => {
   mdxContent += `## ${formatTitle(type)}\n\n`;
 
+  //  track heading duplicates. if new do markdown heading else wrap w/ html tag
+  const usedHeadings = new Set();
+
   rows.forEach((row) => {
     const heading = row["Label"] || row["Grammar"];
     if (heading) {
       const formattedHeading = heading
         .replace(/->/g, "→")
         .replace(/<<[^>]+>>/g, (match) => `\`${match.slice(2, -2)}\``);
-      mdxContent += `### ${formatTitle(formattedHeading)}\n\n`;
+
+      if (usedHeadings.has(formattedHeading)) {
+        mdxContent += `<h3>${formatTitle(formattedHeading)}</h3>\n\n`;
+      } else {
+        mdxContent += `### ${formatTitle(formattedHeading)}\n\n`;
+        usedHeadings.add(formattedHeading);
+      }
 
       if (row["Label"] && row["Grammar"] && row["Label"] !== row["Grammar"]) {
         mdxContent += `- **Grammar:** \`${row["Grammar"]}\`\n`;
