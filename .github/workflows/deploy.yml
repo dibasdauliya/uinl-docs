@@ -28,7 +28,7 @@ jobs:
         run: npm ci
 
       - name: Convert TSV to MDX
-        run: node convert-tsv-to-md-v4.mjs
+        run: node convert-tsv-to-md.mjs
 
       - name: Build
         run: npm run build
